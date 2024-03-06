@@ -86,6 +86,3 @@ enum RRuleError: Error {
     case unsupportedFeature(String)
     // Add other error cases as needed
 }
-
-
-// Define necessary enums and structs (e.g., `RecurrenceRule`, `RecurrenceFrequency`, `RRuleError`) below.
