@@ -59,61 +59,37 @@ public class Context {
         self.tz = tz
     }
     
-//    func rebuild(year: Int, month: Int) {
-//        self.year = year
-//
-//        if year != lastYear {
-//            resetYear()
-//        }
-//
-//        if let bynweekday = options["bynweekday"] as? [[Int]], !bynweekday.isEmpty, (month != lastMonth || year != lastYear) {
-//            var possibleDateRanges: [[Int]] = []
-//
-//            if let freq = options["freq"] as? String {
-//                switch freq {
-//                case "YEARLY":
-//                    if let bymonth = options["bymonth"] as? [Int] {
-//                        for mon in bymonth {
-//                            let range = elapsedDaysInYearByMonth(mon: mon)
-//                            possibleDateRanges.append(range)
-//                        }
-//                    } else {
-//                        possibleDateRanges.append([0, yearLengthInDays()])
-//                    }
-//                case "MONTHLY":
-//                    let range = elapsedDaysInYearByMonth(mon: month)
-//                    possibleDateRanges.append(range)
-//                default:
-//                    break
-//                }
-//            }
-//
-//            if !possibleDateRanges.isEmpty {
-//                self.dayOfYearMask = Array(repeating: false, count: yearLengthInDays())
-//
-//                for possibleDateRange in possibleDateRanges {
-//                    let yearDayStart = possibleDateRange[0]
-//                    let yearDayEnd = possibleDateRange[1] - 1
-//
-//                    for weekday in bynweekday {
-//                        if let dayOfYear = dayOfYearWithinRange(weekday: weekday, yearDayStart: yearDayStart, yearDayEnd: yearDayEnd) {
-//                            dayOfYearMask?[dayOfYear] = true
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//
-//        self.lastYear = year
-//        self.lastMonth = month
-//    }
-    
     private func resetYear() {
         self.yearLengthInDays = nil
         self.firstDayOfYear = nil
         self.firstWeekdayOfYear = nil
         self.weekdayByDayOfYear = nil
         self.elapsedDaysInYearByMonth = nil
+    }
+    
+    func dayOfYearWithinRange(weekday: Weekday, yearDayStart: Int, yearDayEnd: Int) -> Int? {
+        guard let weekdays = self.weekdayByDayOfYear else { return nil }
+        
+        let wday = weekday.index
+        guard let ordinalWeekday = weekday.ordinal else { return nil }
+        
+        var dayOfYear: Int
+        
+        if ordinalWeekday < 0 {
+            // For negative ordinals, start from the end
+            dayOfYear = yearDayEnd + (ordinalWeekday + 1) * 7
+            dayOfYear -= (weekdays[dayOfYear % weekdays.count] - wday) % 7
+        } else {
+            // For positive ordinals, start from the beginning
+            dayOfYear = yearDayStart + (ordinalWeekday - 1) * 7
+            dayOfYear += (7 - weekdays[dayOfYear % weekdays.count] + wday) % 7
+        }
+
+        if yearDayStart <= dayOfYear, dayOfYear <= yearDayEnd {
+            return dayOfYear
+        }
+        
+        return nil
     }
 }
 

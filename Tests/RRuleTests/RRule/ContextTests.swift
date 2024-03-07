@@ -108,5 +108,26 @@ class ContextTests: XCTestCase {
         let expectedSequence = [3, 4, 5, 6, 0, 1, 2] // Starting from Wednesday
         XCTAssertEqual(Array(sequence), expectedSequence, "The sequence should start with [3, 4, 5, 6, 0, 1, 2].")
     }
+    
+    func testDayOfYearWithinRangePositiveOrdinal() {
+        // Example: Test for 2nd Tuesday of January (assuming Jan 1 is a Wednesday)
+        let weekday = Weekday(index: 2, ordinal: 2) // Tuesday
+        let result = context.dayOfYearWithinRange(weekday: weekday, yearDayStart: 1, yearDayEnd: 31)
+        XCTAssertEqual(result, 13, "Expected to find the 2nd Tuesday on the 14th of January")
+    }
+
+    func testDayOfYearWithinRangeNegativeOrdinal() {
+        // Example: Test for last Friday of January
+        let weekday = Weekday(index: 5, ordinal: -1) // Friday
+        let result = context.dayOfYearWithinRange(weekday: weekday, yearDayStart: 1, yearDayEnd: 31)
+        XCTAssertEqual(result, 30, "Expected to find the last Friday on the 30th of January")
+    }
+
+    func testDayOfYearWithinRangeOutOfRange() {
+        // Test for a day that does not exist (5th Monday of February, for example)
+        let weekday = Weekday(index: 1, ordinal: 5) // Monday
+        let result = context.dayOfYearWithinRange(weekday: weekday, yearDayStart: 32, yearDayEnd: 59) // February
+        XCTAssertNil(result, "Expected no result for a 5th Monday in February")
+    }
 }
 
