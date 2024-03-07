@@ -18,7 +18,7 @@ public class Context {
     var lastMonth: Int?
     
     var leapYear: Bool {
-        guard let year = self.year else { return false } // Safely unwrap year
+        guard let year = self.year else { return false }
         return Calendar.current.isLeapYear(year: year)
     }
     
@@ -35,19 +35,20 @@ public class Context {
     }()
     
     lazy var firstDayOfYear: Date? = {
-        var components = DateComponents(year: self.year, month: 1, day: 1)
-        let calendar = Calendar.current
-        return calendar.date(from: components)
+        guard let year = self.year else { return nil }
+        let components = DateComponents(year: self.year, month: 1, day: 1)
+        return Calendar.current.date(from: components)
     }()
     
     lazy var firstWeekdayOfYear: Int? = {
-        let calendar = Calendar.current
-        // Safely unwrap `firstDayOfYear`, return a default value (e.g., 0) if nil
-        guard let firstDay = self.firstDayOfYear else {
-            return nil // Decide on a default value
-        }
+        guard let firstDay = self.firstDayOfYear else { return nil }
         // Weekday component ranges from 1 (Sunday) to 7 (Saturday) in the Gregorian calendar
-        return calendar.component(.weekday, from: firstDay) - 1
+        return Calendar.current.component(.weekday, from: firstDay) - 1
+    }()
+    
+    lazy var weekdayByDayOfYear: [Int]? = {
+        guard let adjustment = self.firstWeekdayOfYear else { return nil }
+        return Array(self.weekdaysInYear.dropFirst(adjustment))
     }()
     
     //MARK: Init
@@ -111,6 +112,7 @@ public class Context {
         self.yearLengthInDays = nil
         self.firstDayOfYear = nil
         self.firstWeekdayOfYear = nil
+        self.weekdayByDayOfYear = nil
         self.elapsedDaysInYearByMonth = nil
     }
 }
