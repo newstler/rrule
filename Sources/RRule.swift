@@ -10,9 +10,9 @@ import Foundation
 enum RRule {
     static let weekdays = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"]
     
-    static func parse(_ rrule: String, options: [String: Any]) -> Rule {
-        return Rule(rrule, options: options)
-    }
+//    static func parse(_ rrule: String, options: [String: Any]) -> Rule {
+//        return Rule(rrule, options: options)
+//    }
 
     // Error handling
     class InvalidRRule: Error {}
