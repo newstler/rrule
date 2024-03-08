@@ -24,10 +24,17 @@ extension Calendar {
 extension Date {
     func endOfYear(using calendar: Calendar) -> Date? {
         guard let year = calendar.dateComponents([.year], from: self).year else { return nil }
-        var components = DateComponents(year: year + 1, second: -1)
+        let components = DateComponents(year: year + 1, second: -1)
         guard let endOfYear = calendar.date(from: components) else { return nil }
         
         return calendar.date(byAdding: .day, value: 7, to: endOfYear)
+    }
+    
+    func endOfMonth(using calendar: Calendar = .current) -> Date? {
+        var components = calendar.dateComponents([.year, .month], from: self)
+        components.month! += 1
+        components.day = 0
+        return calendar.date(from: components)
     }
 }
 

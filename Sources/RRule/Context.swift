@@ -17,10 +17,7 @@ public class Context {
     var lastYear: Int?
     var lastMonth: Int?
     
-    var leapYear: Bool {
-        guard let year = self.year else { return false }
-        return Calendar.current.isLeapYear(year: year)
-    }
+
     
     private var _yearLengthInDays: Int?
     var yearLengthInDays: Int? {
@@ -90,6 +87,125 @@ public class Context {
         _monthByDayOfYear = months
         return months
     }
+    
+    private var _monthDayByDayOfYear: [Int]?
+    var monthDayByDayOfYear: [Int]? {
+        if let cachedValue = _monthDayByDayOfYear {
+            return cachedValue
+        }
+        
+        guard let start = self.daysInYear?.start,
+              let end = self.daysInYear?.end else { return nil }
+        
+        var current = start
+        let calendar = Calendar.current
+        var monthDays = [Int]()
+        
+        while current <= end {
+            let dayOfMonth = calendar.component(.day, from: current)
+            monthDays.append(dayOfMonth)
+            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = nextDay
+        }
+        
+        _monthDayByDayOfYear = monthDays
+        return monthDays
+    }
+    
+    private var _negativeMonthDayByDayOfYear: [Int]?
+    var negativeMonthDayByDayOfYear: [Int]? {
+        if let cachedValue = _negativeMonthDayByDayOfYear {
+            return cachedValue
+        }
+
+        guard let start = self.daysInYear?.start,
+              let end = self.daysInYear?.end else { return nil }
+        
+        var current = start
+        let calendar = Calendar.current
+        var results = [Int]()
+
+        while current <= end {
+            guard let endOfMonth = current.endOfMonth(using: calendar) else { break }
+            let dayOfMonth = calendar.component(.day, from: current)
+            let lastDayOfMonth = calendar.component(.day, from: endOfMonth)
+            let result = dayOfMonth - lastDayOfMonth - 1
+            results.append(result)
+            
+            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = nextDay
+        }
+
+        _negativeMonthDayByDayOfYear = results
+        return results
+    }
+    
+    private var _weekdayByDayOfYear: [Int]?
+    var weekdayByDayOfYear: [Int]? {
+        if let cachedValue = _weekdayByDayOfYear {
+            return cachedValue
+        }
+        guard let adjustment = self.firstWeekdayOfYear else { return nil }
+        let value = Array(self.weekdaysInYear.dropFirst(adjustment))
+        _weekdayByDayOfYear = value
+        return value
+    }
+    
+    private var _weekNumberByDayOfYear: [Int]?
+    var weekNumberByDayOfYear: [Int]? {
+        if let cachedValue = _weekNumberByDayOfYear {
+            return cachedValue
+        }
+
+        guard let start = self.daysInYear?.start,
+              let end = self.daysInYear?.end else { return nil }
+        
+        var current = start
+        let calendar = Calendar.current
+        var weekNumbers = [Int]()
+
+        while current <= end {
+            let weekOfYear = calendar.component(.weekOfYear, from: current)
+            weekNumbers.append(weekOfYear)
+            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = nextDay
+        }
+
+        _weekNumberByDayOfYear = weekNumbers
+        return weekNumbers
+    }
+    
+    private var _negativeWeekNumberByDayOfYear: [Int]?
+    var negativeWeekNumberByDayOfYear: [Int]? {
+        if let cachedValue = _negativeWeekNumberByDayOfYear {
+            return cachedValue
+        }
+
+        guard let start = self.daysInYear?.start,
+              let end = self.daysInYear?.end else { return nil }
+
+        var current = start
+        let calendar = Calendar.current
+        var negativeWeekNumbers = [Int]()
+
+        // Get the ISO week number for December 28th of the current year, which is in the last ISO week of the year.
+        guard let dec28 = calendar.date(from: DateComponents(year: self.year, month: 12, day: 28)),
+              let lastWeekNumberOfYear = calendar.dateComponents([.weekOfYear], from: dec28).weekOfYear else {
+            return nil
+        }
+
+        while current <= end {
+            guard let weekOfYear = calendar.dateComponents([.weekOfYear], from: current).weekOfYear else { break }
+            let negativeWeekNumber = weekOfYear - lastWeekNumberOfYear - 1
+            negativeWeekNumbers.append(negativeWeekNumber)
+
+            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = nextDay
+        }
+
+        _negativeWeekNumberByDayOfYear = negativeWeekNumbers
+        return negativeWeekNumbers
+    }
 
     private var _elapsedDaysInYearByMonth: [Int]?
     var elapsedDaysInYearByMonth: [Int]? {
@@ -101,26 +217,69 @@ public class Context {
         : [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
         return _elapsedDaysInYearByMonth
     }
+    
+    //MARK: private
 
-    private var _weekdaysInYear: [Int]?
-    var weekdaysInYear: [Int] {
-        if let cachedValue = _weekdaysInYear {
-            return cachedValue
-        }
-        let value = Array(repeating: 0...6, count: 54).flatMap { $0 }
-        _weekdaysInYear = value
-        return value
+    lazy var weekdaysInYear: [Int] = {
+        return Array(repeating: 0...6, count: 54).flatMap { $0 }
+    }()
+    
+    var leapYear: Bool {
+        guard let year = self.year else { return false }
+        return Calendar.current.isLeapYear(year: year)
     }
-
-    private var _weekdayByDayOfYear: [Int]?
-    var weekdayByDayOfYear: [Int]? {
-        if let cachedValue = _weekdayByDayOfYear {
+    
+    private func resetYear() {
+        _daysInYear = nil
+        _yearLengthInDays = nil
+        _nextYearLengthInDays = nil
+        _firstDayOfYear = nil
+        _firstWeekdayOfYear = nil
+        _monthByDayOfYear = nil
+        _monthDayByDayOfYear = nil
+        _negativeMonthDayByDayOfYear = nil
+        _weekdayByDayOfYear = nil
+        _weekNumberByDayOfYear = nil
+        _negativeWeekNumberByDayOfYear = nil
+        _elapsedDaysInYearByMonth = nil
+    }
+    
+    private var _daysInYear: (start: Date, end: Date)?
+    var daysInYear: (start: Date, end: Date)? {
+        if let cachedValue = _daysInYear {
             return cachedValue
         }
-        guard let adjustment = self.firstWeekdayOfYear else { return nil }
-        let value = Array(self.weekdaysInYear.dropFirst(adjustment))
-        _weekdayByDayOfYear = value
-        return value
+        guard let firstDayOfYear = self.firstDayOfYear,
+              let endOfYearPlus7Days = firstDayOfYear.endOfYear(using: Calendar.current) else {
+            return nil
+        }
+        _daysInYear = (firstDayOfYear, endOfYearPlus7Days)
+        return _daysInYear
+    }
+    
+    func dayOfYearWithinRange(weekday: Weekday, yearDayStart: Int, yearDayEnd: Int) -> Int? {
+        guard let weekdays = self.weekdayByDayOfYear else { return nil }
+        
+        let wday = weekday.index
+        guard let ordinalWeekday = weekday.ordinal else { return nil }
+        
+        var dayOfYear: Int
+        
+        if ordinalWeekday < 0 {
+            // For negative ordinals, start from the end
+            dayOfYear = yearDayEnd + (ordinalWeekday + 1) * 7
+            dayOfYear -= (weekdays[dayOfYear % weekdays.count] - wday) % 7
+        } else {
+            // For positive ordinals, start from the beginning
+            dayOfYear = yearDayStart + (ordinalWeekday - 1) * 7
+            dayOfYear += (7 - weekdays[dayOfYear % weekdays.count] + wday) % 7
+        }
+
+        if yearDayStart <= dayOfYear, dayOfYear <= yearDayEnd {
+            return dayOfYear
+        }
+        
+        return nil
     }
     
     //MARK: Init
@@ -183,54 +342,5 @@ public class Context {
         
         self.lastYear = year
         self.lastMonth = month
-    }
-    
-    private func resetYear() {
-        _daysInYear = nil
-        _yearLengthInDays = nil
-        _nextYearLengthInDays = nil
-        _elapsedDaysInYearByMonth = nil
-        _weekdaysInYear = nil
-        _firstDayOfYear = nil
-        _firstWeekdayOfYear = nil
-        _weekdayByDayOfYear = nil
-    }
-    
-    private var _daysInYear: (start: Date, end: Date)?
-    var daysInYear: (start: Date, end: Date)? {
-        if let cachedValue = _daysInYear {
-            return cachedValue
-        }
-        guard let firstDayOfYear = self.firstDayOfYear,
-              let endOfYearPlus7Days = firstDayOfYear.endOfYear(using: Calendar.current) else {
-            return nil
-        }
-        _daysInYear = (firstDayOfYear, endOfYearPlus7Days)
-        return _daysInYear
-    }
-    
-    func dayOfYearWithinRange(weekday: Weekday, yearDayStart: Int, yearDayEnd: Int) -> Int? {
-        guard let weekdays = self.weekdayByDayOfYear else { return nil }
-        
-        let wday = weekday.index
-        guard let ordinalWeekday = weekday.ordinal else { return nil }
-        
-        var dayOfYear: Int
-        
-        if ordinalWeekday < 0 {
-            // For negative ordinals, start from the end
-            dayOfYear = yearDayEnd + (ordinalWeekday + 1) * 7
-            dayOfYear -= (weekdays[dayOfYear % weekdays.count] - wday) % 7
-        } else {
-            // For positive ordinals, start from the beginning
-            dayOfYear = yearDayStart + (ordinalWeekday - 1) * 7
-            dayOfYear += (7 - weekdays[dayOfYear % weekdays.count] + wday) % 7
-        }
-
-        if yearDayStart <= dayOfYear, dayOfYear <= yearDayEnd {
-            return dayOfYear
-        }
-        
-        return nil
     }
 }
