@@ -12,7 +12,7 @@ public class Context {
     var dtstart: Date
     var tz: TimeZone
     var dayOfYearMask: [Bool]?
-    var year: Int? = 1997
+    var year: Int?
     
     var lastYear: Int?
     var lastMonth: Int?
@@ -22,34 +22,69 @@ public class Context {
         return Calendar.current.isLeapYear(year: year)
     }
     
-    lazy var yearLengthInDays: Int? = {
-        return leapYear ? 366 : 365
-    }()
-    
-    lazy var elapsedDaysInYearByMonth: [Int]? = {
-        return leapYear ? [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366] : [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
-    }()
-    
-    lazy var weekdaysInYear: [Int] = {
-        return Array(repeating: 0...6, count: 54).flatMap { $0 }
-    }()
-    
-    lazy var firstDayOfYear: Date? = {
+    private var _yearLengthInDays: Int?
+    var yearLengthInDays: Int? {
+        if let cachedValue = _yearLengthInDays {
+            return cachedValue
+        }
+        _yearLengthInDays = leapYear ? 366 : 365
+        return _yearLengthInDays
+    }
+
+    private var _elapsedDaysInYearByMonth: [Int]?
+    var elapsedDaysInYearByMonth: [Int]? {
+        if let cachedValue = _elapsedDaysInYearByMonth {
+            return cachedValue
+        }
+        _elapsedDaysInYearByMonth = leapYear
+        ? [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]
+        : [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
+        return _elapsedDaysInYearByMonth
+    }
+
+    private var _weekdaysInYear: [Int]?
+    var weekdaysInYear: [Int] {
+        if let cachedValue = _weekdaysInYear {
+            return cachedValue
+        }
+        let value = Array(repeating: 0...6, count: 54).flatMap { $0 }
+        _weekdaysInYear = value
+        return value
+    }
+
+    private var _firstDayOfYear: Date?
+    var firstDayOfYear: Date? {
+        if let cachedValue = _firstDayOfYear {
+            return cachedValue
+        }
         guard let year = self.year else { return nil }
-        let components = DateComponents(year: self.year, month: 1, day: 1)
-        return Calendar.current.date(from: components)
-    }()
-    
-    lazy var firstWeekdayOfYear: Int? = {
+        let components = DateComponents(year: year, month: 1, day: 1)
+        let value = Calendar.current.date(from: components)
+        _firstDayOfYear = value
+        return value
+    }
+
+    private var _firstWeekdayOfYear: Int?
+    var firstWeekdayOfYear: Int? {
+        if let cachedValue = _firstWeekdayOfYear {
+            return cachedValue
+        }
         guard let firstDay = self.firstDayOfYear else { return nil }
-        // Weekday component ranges from 1 (Sunday) to 7 (Saturday) in the Gregorian calendar
-        return Calendar.current.component(.weekday, from: firstDay) - 1
-    }()
-    
-    lazy var weekdayByDayOfYear: [Int]? = {
+        let value = Calendar.current.component(.weekday, from: firstDay) - 1
+        _firstWeekdayOfYear = value
+        return value
+    }
+
+    private var _weekdayByDayOfYear: [Int]?
+    var weekdayByDayOfYear: [Int]? {
+        if let cachedValue = _weekdayByDayOfYear {
+            return cachedValue
+        }
         guard let adjustment = self.firstWeekdayOfYear else { return nil }
-        return Array(self.weekdaysInYear.dropFirst(adjustment))
-    }()
+        let value = Array(self.weekdaysInYear.dropFirst(adjustment))
+        _weekdayByDayOfYear = value
+        return value
+    }
     
     //MARK: Init
 
@@ -59,12 +94,67 @@ public class Context {
         self.tz = tz
     }
     
+    func rebuild(year: Int, month: Int) {
+        self.year = year
+        
+        if year != lastYear {
+            resetYear()
+        }
+        
+        guard let options = options["bynweekday"] as? [Weekday], !options.isEmpty,
+              month != lastMonth || year != lastYear else {
+            return
+        }
+        
+        var possibleDateRanges: [[Int]] = []
+        
+        if let freq = self.options["freq"] as? String {
+            switch freq {
+            case "YEARLY":
+                if let bymonth = self.options["bymonth"] as? [Int] {
+                    possibleDateRanges = bymonth.compactMap { mon in
+                        guard let range = elapsedDaysInYearByMonth, mon > 0, mon < range.count else { return nil }
+                        return [range[mon - 1], range[mon]]
+                    }
+                } else {
+                    if let yearLength = yearLengthInDays {
+                        possibleDateRanges = [[0, yearLength]]
+                    }
+                }
+            case "MONTHLY":
+                if let range = elapsedDaysInYearByMonth, month > 0, month <= range.count - 1 {
+                    possibleDateRanges = [[range[month - 1], range[month]]]
+                }
+            default: break
+            }
+        }
+        
+        if !possibleDateRanges.isEmpty {
+            self.dayOfYearMask = Array(repeating: false, count: yearLengthInDays ?? 365)
+            
+            for possibleDateRange in possibleDateRanges {
+                let yearDayStart = possibleDateRange[0]
+                let yearDayEnd = possibleDateRange[1] - 1
+                
+                for weekdayOption in options {
+                    if let dayOfYear = dayOfYearWithinRange(weekday: weekdayOption, yearDayStart: yearDayStart, yearDayEnd: yearDayEnd) {
+                        dayOfYearMask?[dayOfYear] = true
+                    }
+                }
+            }
+        }
+        
+        self.lastYear = year
+        self.lastMonth = month
+    }
+    
     private func resetYear() {
-        self.yearLengthInDays = nil
-        self.firstDayOfYear = nil
-        self.firstWeekdayOfYear = nil
-        self.weekdayByDayOfYear = nil
-        self.elapsedDaysInYearByMonth = nil
+        _yearLengthInDays = nil
+        _elapsedDaysInYearByMonth = nil
+        _weekdaysInYear = nil
+        _firstDayOfYear = nil
+        _firstWeekdayOfYear = nil
+        _weekdayByDayOfYear = nil
     }
     
     func dayOfYearWithinRange(weekday: Weekday, yearDayStart: Int, yearDayEnd: Int) -> Int? {

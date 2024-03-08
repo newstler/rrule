@@ -26,32 +26,30 @@ class ContextTests: XCTestCase {
     }
 
     func testYearLengthInDays() {
-        // Assuming `rebuild` method sets the `dtstart` to Jan 1st of the given year.
-        // Swift's Date handling does not have a direct equivalent of Ruby's `Time.parse`, and setting a specific year might need extra methods not shown here.
         // In a non leap year
-//        context.dtstart = Calendar.current.date(from: DateComponents(year: 1997, month: 1, day: 1))!
+        context.rebuild(year: 1997, month: 1)
         XCTAssertEqual(context.yearLengthInDays, 365)
 
         // In a leap year
-//        context.dtstart = Calendar.current.date(from: DateComponents(year: 2000, month: 1, day: 1))!
-//        XCTAssertEqual(context.yearLengthInDays, 366)
+        context.rebuild(year: 2000, month: 1)
+        XCTAssertEqual(context.yearLengthInDays, 366)
     }
     
-//    func testElapsedDaysInYearByMonthForLeapYear() {
-//        // Setup for leap year
-////        context.rebuild(year: 2000, month: 1)
-//        let elapsedDays = context.elapsedDaysInYearByMonth!
-//
-//        // Test the first few months to match the leap year pattern
-//        XCTAssertEqual(elapsedDays[0], 0, "The first value should be 0.")
-//        XCTAssertEqual(elapsedDays[1], 31, "The second value should be 31 for January.")
-//        XCTAssertEqual(elapsedDays[2], 60, "The third value should be 60 for February in a leap year.")
-//        XCTAssertEqual(elapsedDays[3], 91, "The fourth value should be 91 for March in a leap year.")
-//    }
+    func testElapsedDaysInYearByMonthForLeapYear() {
+        // Setup for leap year
+        context.rebuild(year: 2000, month: 1)
+        let elapsedDays = context.elapsedDaysInYearByMonth!
+
+        // Test the first few months to match the leap year pattern
+        XCTAssertEqual(elapsedDays[0], 0, "The first value should be 0.")
+        XCTAssertEqual(elapsedDays[1], 31, "The second value should be 31 for January.")
+        XCTAssertEqual(elapsedDays[2], 60, "The third value should be 60 for February in a leap year.")
+        XCTAssertEqual(elapsedDays[3], 91, "The fourth value should be 91 for March in a leap year.")
+    }
 
     func testElapsedDaysInYearByMonthForNonLeapYear() {
         // Setup for non-leap year
-//        context.rebuild(year: 1997, month: 1)
+        context.rebuild(year: 1997, month: 1)
         let elapsedDays = context.elapsedDaysInYearByMonth!
 
         // Test the first few months to match the non-leap year pattern
@@ -62,17 +60,13 @@ class ContextTests: XCTestCase {
     }
     
     func testFirstWeekdayOfYear() {
-//        // Setup
-//        let year = 2022 // Use an example year where January 1st is a Wednesday
-//        let context = Context(year: year)
-//        
-        // Execute & Verify
+        context.rebuild(year: 1997, month: 1)
         XCTAssertEqual(context.firstWeekdayOfYear, 3, "The first weekday of the year should be 3 (Wednesday).")
     }
     
     func testFirstDayOfYear() {
         // Setup
-//        let context = Context(year: 1997)
+        context.rebuild(year: 1997, month: 1)
         
         // Use Calendar to construct the expected date for comparison
         var components = DateComponents()
@@ -92,9 +86,7 @@ class ContextTests: XCTestCase {
     
     func testWeekdayByDayOfYearStartsWithExpectedSequence() {
         // Set up
-//        let context = Context(year: 2022) // Choose a year that starts on a Wednesday
-        // It's important to choose a year that matches the expected sequence
-        // For this example, 2022 is just a placeholder and likely needs to be adjusted
+        context.rebuild(year: 1997, month: 1) // Choose a year that starts on a Wednesday
 
         // Execute
         guard let weekdayByDayOfYear = context.weekdayByDayOfYear else {
@@ -110,6 +102,8 @@ class ContextTests: XCTestCase {
     }
     
     func testDayOfYearWithinRangePositiveOrdinal() {
+        context.rebuild(year: 1997, month: 1)
+
         // Example: Test for 2nd Tuesday of January (assuming Jan 1 is a Wednesday)
         let weekday = Weekday(index: 2, ordinal: 2) // Tuesday
         let result = context.dayOfYearWithinRange(weekday: weekday, yearDayStart: 1, yearDayEnd: 31)
@@ -117,6 +111,8 @@ class ContextTests: XCTestCase {
     }
 
     func testDayOfYearWithinRangeNegativeOrdinal() {
+        context.rebuild(year: 1997, month: 1)
+
         // Example: Test for last Friday of January
         let weekday = Weekday(index: 5, ordinal: -1) // Friday
         let result = context.dayOfYearWithinRange(weekday: weekday, yearDayStart: 1, yearDayEnd: 31)
@@ -124,6 +120,8 @@ class ContextTests: XCTestCase {
     }
 
     func testDayOfYearWithinRangeOutOfRange() {
+        context.rebuild(year: 1997, month: 1)
+
         // Test for a day that does not exist (5th Monday of February, for example)
         let weekday = Weekday(index: 1, ordinal: 5) // Monday
         let result = context.dayOfYearWithinRange(weekday: weekday, yearDayStart: 32, yearDayEnd: 59) // February
