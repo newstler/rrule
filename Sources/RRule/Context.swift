@@ -30,28 +30,21 @@ public class Context {
         _yearLengthInDays = leapYear ? 366 : 365
         return _yearLengthInDays
     }
-
-    private var _elapsedDaysInYearByMonth: [Int]?
-    var elapsedDaysInYearByMonth: [Int]? {
-        if let cachedValue = _elapsedDaysInYearByMonth {
+    
+    private var _nextYearLengthInDays: Int?
+    var nextYearLengthInDays: Int? {
+        if let cachedValue = _nextYearLengthInDays {
             return cachedValue
         }
-        _elapsedDaysInYearByMonth = leapYear
-        ? [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]
-        : [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
-        return _elapsedDaysInYearByMonth
+        
+        guard let year = self.year else { return nil }
+        // Check if next year is a leap year and cache the result
+        let isNextYearLeap = Calendar.current.isLeapYear(year: year + 1)
+        let days = isNextYearLeap ? 366 : 365
+        _nextYearLengthInDays = days
+        return days
     }
-
-    private var _weekdaysInYear: [Int]?
-    var weekdaysInYear: [Int] {
-        if let cachedValue = _weekdaysInYear {
-            return cachedValue
-        }
-        let value = Array(repeating: 0...6, count: 54).flatMap { $0 }
-        _weekdaysInYear = value
-        return value
-    }
-
+    
     private var _firstDayOfYear: Date?
     var firstDayOfYear: Date? {
         if let cachedValue = _firstDayOfYear {
@@ -72,6 +65,50 @@ public class Context {
         guard let firstDay = self.firstDayOfYear else { return nil }
         let value = Calendar.current.component(.weekday, from: firstDay) - 1
         _firstWeekdayOfYear = value
+        return value
+    }
+    
+    private var _monthByDayOfYear: [Int]?
+    var monthByDayOfYear: [Int]? {
+        if let cachedValue = _monthByDayOfYear {
+            return cachedValue
+        }
+        guard let start = self.daysInYear?.start,
+              let end = self.daysInYear?.end else { return nil }
+        
+        var current = start
+        let calendar = Calendar.current
+        var months = [Int]()
+        
+        while current <= end {
+            months.append(calendar.component(.month, from: current))
+            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = nextDay
+        }
+        
+        // Cache the computed months before returning
+        _monthByDayOfYear = months
+        return months
+    }
+
+    private var _elapsedDaysInYearByMonth: [Int]?
+    var elapsedDaysInYearByMonth: [Int]? {
+        if let cachedValue = _elapsedDaysInYearByMonth {
+            return cachedValue
+        }
+        _elapsedDaysInYearByMonth = leapYear
+        ? [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]
+        : [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
+        return _elapsedDaysInYearByMonth
+    }
+
+    private var _weekdaysInYear: [Int]?
+    var weekdaysInYear: [Int] {
+        if let cachedValue = _weekdaysInYear {
+            return cachedValue
+        }
+        let value = Array(repeating: 0...6, count: 54).flatMap { $0 }
+        _weekdaysInYear = value
         return value
     }
 
@@ -149,12 +186,27 @@ public class Context {
     }
     
     private func resetYear() {
+        _daysInYear = nil
         _yearLengthInDays = nil
+        _nextYearLengthInDays = nil
         _elapsedDaysInYearByMonth = nil
         _weekdaysInYear = nil
         _firstDayOfYear = nil
         _firstWeekdayOfYear = nil
         _weekdayByDayOfYear = nil
+    }
+    
+    private var _daysInYear: (start: Date, end: Date)?
+    var daysInYear: (start: Date, end: Date)? {
+        if let cachedValue = _daysInYear {
+            return cachedValue
+        }
+        guard let firstDayOfYear = self.firstDayOfYear,
+              let endOfYearPlus7Days = firstDayOfYear.endOfYear(using: Calendar.current) else {
+            return nil
+        }
+        _daysInYear = (firstDayOfYear, endOfYearPlus7Days)
+        return _daysInYear
     }
     
     func dayOfYearWithinRange(weekday: Weekday, yearDayStart: Int, yearDayEnd: Int) -> Int? {
@@ -180,19 +232,5 @@ public class Context {
         }
         
         return nil
-    }
-}
-
-extension Calendar {
-    func isLeapYear(year: Int) -> Bool {
-        let dateComponents = DateComponents(year: year)
-        if let date = self.date(from: dateComponents) {
-            return self.isDateInLeapYear(date: date)
-        }
-        return false
-    }
-    
-    func isDateInLeapYear(date: Date) -> Bool {
-        return self.range(of: .day, in: .year, for: date)?.count == 366
     }
 }

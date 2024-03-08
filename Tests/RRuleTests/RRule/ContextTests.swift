@@ -35,6 +35,24 @@ class ContextTests: XCTestCase {
         XCTAssertEqual(context.yearLengthInDays, 366)
     }
     
+    func testNextYearLengthInDays_NotPriorToLeapYear() {
+        // Setting up the context for a year not prior to a leap year
+        context.rebuild(year: 1997, month: 1)
+
+        // Test the nextYearLengthInDays property
+        let length = context.nextYearLengthInDays
+        XCTAssertEqual(length, 365, "Expected the next year (1998) to have 365 days")
+    }
+
+    func testNextYearLengthInDays_PriorToLeapYear() {
+        // Setting up the context for a year prior to a leap year
+        context.rebuild(year: 1999, month: 1)
+
+        // Test the nextYearLengthInDays property
+        let length = context.nextYearLengthInDays
+        XCTAssertEqual(length, 366, "Expected the next year (2000) to be a leap year with 366 days")
+    }
+    
     func testElapsedDaysInYearByMonthForLeapYear() {
         // Setup for leap year
         context.rebuild(year: 2000, month: 1)
@@ -69,10 +87,7 @@ class ContextTests: XCTestCase {
         context.rebuild(year: 1997, month: 1)
         
         // Use Calendar to construct the expected date for comparison
-        var components = DateComponents()
-        components.year = 1997
-        components.month = 1
-        components.day = 1
+        var components = DateComponents(year: 1997, month: 1, day: 1)
         let calendar = Calendar.current
         let expectedDate = calendar.date(from: components)!
         
@@ -83,6 +98,38 @@ class ContextTests: XCTestCase {
         }
         XCTAssertEqual(calendar.compare(firstDayOfYear, to: expectedDate, toGranularity: .day), .orderedSame, "The first day of the year should be January 1st, 1997.")
     }
+    
+    func testMonthByDayOfYearLeapYear() {
+         // Setting up the context for a leap year
+        context.rebuild(year: 2000, month: 1)
+
+         guard let monthByDayOfYear = context.monthByDayOfYear else {
+             XCTFail("monthByDayOfYear should not be nil")
+             return
+         }
+
+         // Leap year has 366 days + 7 padding days
+         XCTAssertEqual(monthByDayOfYear.count, 366 + 7, "Expected 366 + 7 days for a leap year")
+         XCTAssertEqual(monthByDayOfYear[0], 1, "The first day of the year should be January")
+         XCTAssertEqual(monthByDayOfYear[59], 2, "The 60th day of a leap year should be in February")
+         XCTAssertEqual(monthByDayOfYear[365], 12, "The last day of the year should be December")
+     }
+
+     func testMonthByDayOfYearNonLeapYear() {
+         // Setting up the context for a non-leap year
+         context.rebuild(year: 1997, month: 1)
+
+         guard let monthByDayOfYear = context.monthByDayOfYear else {
+             XCTFail("monthByDayOfYear should not be nil")
+             return
+         }
+
+         // Non-leap year has 365 days + 7 padding days
+         XCTAssertEqual(monthByDayOfYear.count, 365 + 7, "Expected 365 + 7 days for a non-leap year")
+         XCTAssertEqual(monthByDayOfYear[0], 1, "The first day of the year should be January")
+         XCTAssertEqual(monthByDayOfYear[59], 3, "The 60th day of a non-leap year should be in March")
+         XCTAssertEqual(monthByDayOfYear[364], 12, "The last day of the year should be December")
+     }
     
     func testWeekdayByDayOfYearStartsWithExpectedSequence() {
         // Set up
@@ -108,6 +155,38 @@ class ContextTests: XCTestCase {
         let weekday = Weekday(index: 2, ordinal: 2) // Tuesday
         let result = context.dayOfYearWithinRange(weekday: weekday, yearDayStart: 1, yearDayEnd: 31)
         XCTAssertEqual(result, 13, "Expected to find the 2nd Tuesday on the 14th of January")
+    }
+    
+    func testDaysInYearRangeForNonLeapYear() {
+        // Example for a non-leap year
+        context.rebuild(year: 1997, month: 1)
+        
+        if let daysInYear = context.daysInYear {
+            let calendar = Calendar.current
+            let startOfYear = calendar.date(from: DateComponents(year: 1997, month: 1, day: 1))!
+            let endOfYearPlus7Days = startOfYear.endOfYear(using: calendar)!
+
+            XCTAssertEqual(daysInYear.start, startOfYear, "Start of the year should match")
+            XCTAssertEqual(daysInYear.end, endOfYearPlus7Days, "End of the year plus 7 days should match")
+        } else {
+            XCTFail("daysInYear should not be nil")
+        }
+    }
+
+    func testDaysInYearRangeForLeapYear() {
+        // Example for a leap year
+        context.rebuild(year: 2000, month: 1)
+        
+        if let daysInYear = context.daysInYear {
+            let calendar = Calendar.current
+            let startOfYear = calendar.date(from: DateComponents(year: 2000, month: 1, day: 1))!
+            let endOfYearPlus7Days = startOfYear.endOfYear(using: calendar)!
+
+            XCTAssertEqual(daysInYear.start, startOfYear, "Start of the year should match for a leap year")
+            XCTAssertEqual(daysInYear.end, endOfYearPlus7Days, "End of the year plus 7 days should match for a leap year")
+        } else {
+            XCTFail("daysInYear should not be nil for a leap year")
+        }
     }
 
     func testDayOfYearWithinRangeNegativeOrdinal() {
