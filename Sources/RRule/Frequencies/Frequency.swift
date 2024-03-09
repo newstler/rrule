@@ -18,7 +18,7 @@ class Frequency {
         return context.calendar
     }()
 
-    init(context: Context, filters: [Filter], generator: Generator, timeset: [[String: [Int]]], start_date: Date?) {
+    init(context: Context, filters: [Filter], generator: Generator, timeset: [[String: [Int]]], start_date: Date? = nil) {
         self.context = context
         self.current_date = start_date ?? context.dtstart
         self.filters = filters
