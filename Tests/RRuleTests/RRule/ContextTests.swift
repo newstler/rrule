@@ -259,7 +259,7 @@ class ContextTests: XCTestCase {
         XCTAssertEqual(weekNumbers[364], 1, "Expected the last day of 1997 to be part of the first week of the next year")
     }
     
-    // TODO: Switch back when it's fixed
+    // FIXME: Switch back when Context.negativeWeekNumberByDayOfYear is fixed
 //    func testFirstDayInFirstWeekOfYear() {
 //        // Year 1997, where the first day is in the first week of that year
 //        context.rebuild(year: 1997, month: 1)

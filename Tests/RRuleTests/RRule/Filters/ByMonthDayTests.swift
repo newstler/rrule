@@ -6,30 +6,39 @@
 //
 
 import XCTest
+@testable import RRule
 
-final class ByMonthDayTests: XCTestCase {
+class ByMonthDayTests: XCTestCase {
+    var context: Context!
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    override func setUp() {
+        super.setUp()
+        // Setup the context with specified options and start date
+        let options: [String: Any] = ["freq": "MONTHLY", "count": 4]
+        let startDate = DateComponents(calendar: .current, timeZone: TimeZone(identifier: "America/Los_Angeles"), year: 1997, month: 1, day: 1).date!
+        context = Context(options: options, dtstart: startDate, tz: TimeZone(identifier: "America/Los_Angeles")!)
+        context.rebuild(year: 1997, month: 1)
+    }
+    
+    func testRejectForTheThirdDayOfTheMonth() {
+        let byMonthDay = ByMonthDay(byMonthDays: [3, -3], context: context)
+        // January 3, 1997, should not be rejected as it is explicitly included
+        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: DateComponents(calendar: .current, year: 1997, month: 1, day: 3).date!)!
+        XCTAssertFalse(byMonthDay.reject(index: dayOfYear - 1)) // Adjusting index for zero-based array
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func testRejectForTheFourthDayOfTheMonth() {
+        let byMonthDay = ByMonthDay(byMonthDays: [3, -3], context: context)
+        // January 4, 1997, should be rejected as it is not explicitly included
+        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: DateComponents(calendar: .current, year: 1997, month: 1, day: 4).date!)!
+        XCTAssertTrue(byMonthDay.reject(index: dayOfYear - 1)) // Adjusting index for zero-based array
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    func testRejectForTheThirdToLastDayOfTheMonth() {
+        let byMonthDay = ByMonthDay(byMonthDays: [3, -3], context: context)
+        // January 29, 1997, should not be rejected as it is the third-to-last day
+        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: DateComponents(calendar: .current, year: 1997, month: 1, day: 29).date!)!
+        XCTAssertFalse(byMonthDay.reject(index: dayOfYear - 1)) // Adjusting index for zero-based array
     }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
-
 }
+

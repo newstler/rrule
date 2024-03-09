@@ -6,30 +6,44 @@
 //
 
 import XCTest
+@testable import RRule
 
-final class ByMonthTests: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+class ByMonthTests: XCTestCase {
+    var context: Context!
+    
+    override func setUp() {
+        super.setUp()
+        let options: [String: Any] = ["freq": "MONTHLY", "count": 4]
+        let startDate = DateComponents(calendar: .current, timeZone: TimeZone(identifier: "America/Los_Angeles"), year: 1997, month: 1, day: 1).date!
+        context = Context(options: options, dtstart: startDate, tz: TimeZone(identifier: "America/Los_Angeles")!)
+        context.rebuild(year: 1997, month: 1)
     }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    
+    func testRejectForDayInJanuary() {
+        let byMonth = ByMonth(byMonths: [1, 3], context: context)
+        let date = DateComponents(calendar: .current, year: 1997, month: 1, day: 15).date!
+        let calendar = Calendar.current
+        let dayOfYear = calendar.ordinality(of: .day, in: .year, for: date)!
+        
+        XCTAssertFalse(byMonth.reject(index: dayOfYear - 1))
     }
-
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    
+    func testRejectForDayInFebruary() {
+        let byMonth = ByMonth(byMonths: [1, 3], context: context)
+        let date = DateComponents(calendar: .current, year: 1997, month: 2, day: 15).date!
+        let calendar = Calendar.current
+        let dayOfYear = calendar.ordinality(of: .day, in: .year, for: date)!
+        
+        XCTAssertTrue(byMonth.reject(index: dayOfYear - 1))
     }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+    
+    func testRejectForDayInMarch() {
+        let byMonth = ByMonth(byMonths: [1, 3], context: context)
+        let date = DateComponents(calendar: .current, year: 1997, month: 3, day: 15).date!
+        let calendar = Calendar.current
+        let dayOfYear = calendar.ordinality(of: .day, in: .year, for: date)!
+        
+        XCTAssertFalse(byMonth.reject(index: dayOfYear - 1))
     }
-
 }
+
