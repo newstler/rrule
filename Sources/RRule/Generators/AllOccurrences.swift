@@ -8,7 +8,7 @@
 import Foundation
 
 class AllOccurrences: Generator {
-    func combineDatesAndTimes(dayset: [Int?], timeset: [[String: [Int]]]) -> [Date] {
+    override func combineDatesAndTimes(dayset: [Int?], timeset: [[String: [Int]]]) -> [Date] {
         guard let firstDayOfYear = context.firstDayOfYear else { return [] }
         let calendar = Calendar.current
         

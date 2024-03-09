@@ -15,7 +15,7 @@ class BySetPosition: Generator {
         super.init(context: context)
     }
 
-    func combineDatesAndTimes(dayset: [Int?], timeset: [[String: [Int]]]) -> [Date] {
+    override func combineDatesAndTimes(dayset: [Int?], timeset: [[String: [Int]]]) -> [Date] {
         let validDates = self.validDates(dayset: dayset)
         return validDates.flatMap { date in
             processTimeset(date: date, timeset: timeset)

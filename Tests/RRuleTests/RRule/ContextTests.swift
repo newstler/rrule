@@ -10,13 +10,20 @@ import XCTest
 
 class ContextTests: XCTestCase {
     var context: Context!
+    let timeZone = TimeZone(identifier: "America/Los_Angeles")!
+    
+    lazy var calendar: Calendar = {
+        var cal = Calendar.current
+        cal.timeZone = timeZone
+        return cal
+    }()
 
     override func setUp() {
         super.setUp()
         context = Context(
             options: ["freq": "DAILY", "count": 3],
             dtstart: Date(timeIntervalSince1970: 872668800), // Equivalent to Tue Sep  2 06:00:00 PDT 1997
-            tz: TimeZone(identifier: "America/Los_Angeles")!
+            tz: timeZone
         )
     }
     
@@ -88,7 +95,7 @@ class ContextTests: XCTestCase {
         
         // Use Calendar to construct the expected date for comparison
         let components = DateComponents(year: 1997, month: 1, day: 1)
-        let calendar = Calendar.current
+        let calendar = calendar
         let expectedDate = calendar.date(from: components)!
         
         // Execute & Verify
@@ -326,8 +333,6 @@ class ContextTests: XCTestCase {
         context.rebuild(year: 1997, month: 1)
         
         if let daysInYear = context.daysInYear {
-            var calendar = Calendar.current
-            calendar.timeZone = TimeZone(secondsFromGMT: 0)! // Use UTC
             let startOfYear = calendar.date(from: DateComponents(year: 1997, month: 1, day: 1))!
             let endOfYearPlus7Days = startOfYear.endOfYear(using: calendar)!
 
@@ -343,8 +348,6 @@ class ContextTests: XCTestCase {
         context.rebuild(year: 2000, month: 1)
         
         if let daysInYear = context.daysInYear {
-            var calendar = Calendar.current
-            calendar.timeZone = TimeZone(secondsFromGMT: 0)! // Use UTC
             let startOfYear = calendar.date(from: DateComponents(year: 2000, month: 1, day: 1))!
             let endOfYearPlus7Days = startOfYear.endOfYear(using: calendar)!
 

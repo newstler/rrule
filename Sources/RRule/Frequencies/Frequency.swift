@@ -10,11 +10,15 @@ import Foundation
 class Frequency {
     var current_date: Date
     let filters: [Filter]
-    let generator: Any
-    let timeset: Any // Specify the correct timeset type
+    let generator: Generator
+    let timeset: [[String: [Int]]]
     unowned let context: Context
+    
+    lazy var calendar: Calendar = {
+        return context.calendar
+    }()
 
-    init(context: Context, filters: [Filter], generator: Generator, timeset: Any, start_date: Date?) {
+    init(context: Context, filters: [Filter], generator: Generator, timeset: [[String: [Int]]], start_date: Date?) {
         self.context = context
         self.current_date = start_date ?? context.dtstart
         self.filters = filters
@@ -24,9 +28,9 @@ class Frequency {
 
     func advance() {
         let interval = advanceBy()
-        guard let newDate = Calendar.current.date(byAdding: interval.component, value: interval.value, to: current_date) else { return }
+        guard let newDate = calendar.date(byAdding: interval.component, value: interval.value, to: current_date) else { return }
         if !sameMonth(current_date, newDate) {
-            context.rebuild(year: Calendar.current.component(.year, from: newDate), month: Calendar.current.component(.month, from: newDate))
+            context.rebuild(year: calendar.component(.year, from: newDate), month: calendar.component(.month, from: newDate))
         }
         current_date = newDate
     }
@@ -36,8 +40,6 @@ class Frequency {
         return (.day, 1) // Default to advancing by one day
     }
     
-    // Define a 'possibleDays' method that subclasses should override.
-    // You might provide a default implementation here, or simply throw an error indicating it must be overridden.
     func possibleDays() -> [Int?] {
         fatalError("Subclasses must implement `possibleDays`.")
     }
@@ -66,7 +68,6 @@ class Frequency {
     }
 
     private func sameMonth(_ firstDate: Date, _ secondDate: Date) -> Bool {
-        let calendar = Calendar.current
         return calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .month) &&
                calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .year)
     }

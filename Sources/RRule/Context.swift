@@ -232,7 +232,7 @@ public class Context {
     
     lazy var calendar: Calendar = {
         var cal = Calendar.current
-        cal.timeZone = TimeZone(secondsFromGMT: 0)! // Use UTC
+        cal.timeZone = tz
         return cal
     }()
     

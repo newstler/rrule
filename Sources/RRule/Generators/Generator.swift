@@ -14,6 +14,10 @@ class Generator {
         self.context = context
     }
     
+    func combineDatesAndTimes(dayset: [Int?], timeset: [[String: [Int]]]) -> [Date] {
+        fatalError("Subclasses must implement `possibleDays`.")
+    }
+    
     func processTimeset(date: Date, timeset: [[String: [Int]]]) -> [Date] {
         guard !timeset.isEmpty else { return [date] }
         
