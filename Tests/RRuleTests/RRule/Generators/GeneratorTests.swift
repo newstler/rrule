@@ -16,7 +16,7 @@ final class GeneratorTests: XCTestCase {
         super.setUp()
         // Setup context and generator here
         let options: [String: Any] = ["interval": 1, "wkst": 1]
-        let startDate = DateComponents(calendar: .current, timeZone: TimeZone(identifier: "America/Los_Angeles"), year: 1997, month: 1, day: 1, hour: 0, minute: 11, second: 22).date!
+        let startDate = DateComponents(calendar: .current, timeZone: TimeZone(identifier: "America/Los_Angeles"), year: 1997, month: 1, day: 1, hour: 0, minute: 0, second: 0).date!
         context = Context(options: options, dtstart: startDate, tz: TimeZone(identifier: "America/Los_Angeles")!)
         generator = Generator(context: context)
         context.rebuild(year: 1997, month: 1)
