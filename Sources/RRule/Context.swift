@@ -36,7 +36,7 @@ public class Context {
         
         guard let year = self.year else { return nil }
         // Check if next year is a leap year and cache the result
-        let isNextYearLeap = Calendar.current.isLeapYear(year: year + 1)
+        let isNextYearLeap = calendar.isLeapYear(year: year + 1)
         let days = isNextYearLeap ? 366 : 365
         _nextYearLengthInDays = days
         return days
@@ -49,7 +49,7 @@ public class Context {
         }
         guard let year = self.year else { return nil }
         let components = DateComponents(year: year, month: 1, day: 1)
-        let value = Calendar.current.date(from: components)
+        let value = calendar.date(from: components)
         _firstDayOfYear = value
         return value
     }
@@ -60,7 +60,7 @@ public class Context {
             return cachedValue
         }
         guard let firstDay = self.firstDayOfYear else { return nil }
-        let value = Calendar.current.component(.weekday, from: firstDay) - 1
+        let value = calendar.component(.weekday, from: firstDay) - 1
         _firstWeekdayOfYear = value
         return value
     }
@@ -74,7 +74,6 @@ public class Context {
               let end = self.daysInYear?.end else { return nil }
         
         var current = start
-        let calendar = Calendar.current
         var months = [Int]()
         
         while current <= end {
@@ -98,7 +97,6 @@ public class Context {
               let end = self.daysInYear?.end else { return nil }
         
         var current = start
-        let calendar = Calendar.current
         var monthDays = [Int]()
         
         while current <= end {
@@ -122,7 +120,6 @@ public class Context {
               let end = self.daysInYear?.end else { return nil }
         
         var current = start
-        let calendar = Calendar.current
         var results = [Int]()
 
         while current <= end {
@@ -161,7 +158,6 @@ public class Context {
               let end = self.daysInYear?.end else { return nil }
         
         var current = start
-        let calendar = Calendar.current
         var weekNumbers = [Int]()
 
         while current <= end {
@@ -175,37 +171,53 @@ public class Context {
         return weekNumbers
     }
     
-    private var _negativeWeekNumberByDayOfYear: [Int]?
-    var negativeWeekNumberByDayOfYear: [Int]? {
-        if let cachedValue = _negativeWeekNumberByDayOfYear {
-            return cachedValue
-        }
-
-        guard let start = self.daysInYear?.start,
-              let end = self.daysInYear?.end else { return nil }
-
-        var current = start
-        let calendar = Calendar.current
-        var negativeWeekNumbers = [Int]()
-
-        // Get the ISO week number for December 28th of the current year, which is in the last ISO week of the year.
-        guard let dec28 = calendar.date(from: DateComponents(year: self.year, month: 12, day: 28)),
-              let lastWeekNumberOfYear = calendar.dateComponents([.weekOfYear], from: dec28).weekOfYear else {
-            return nil
-        }
-
-        while current <= end {
-            guard let weekOfYear = calendar.dateComponents([.weekOfYear], from: current).weekOfYear else { break }
-            let negativeWeekNumber = weekOfYear - lastWeekNumberOfYear - 1
-            negativeWeekNumbers.append(negativeWeekNumber)
-
-            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: current) else { break }
-            current = nextDay
-        }
-
-        _negativeWeekNumberByDayOfYear = negativeWeekNumbers
-        return negativeWeekNumbers
-    }
+    // TODO: Doesn't work because of difference how weeks of years are calculated in Ruby and here
+//    private var _negativeWeekNumberByDayOfYear: [Int]?
+//    var negativeWeekNumberByDayOfYear: [Int]? {
+//        if let cachedValue = _negativeWeekNumberByDayOfYear {
+//            return cachedValue
+//        }
+//        
+//        guard let start = self.daysInYear?.start,
+//              let end = self.daysInYear?.end,
+//              let year = self.year else { return nil }
+//        
+//        var negativeWeekNumbers = [Int]()
+//        var current = start
+//        
+//        // Inside your negativeWeekNumberByDayOfYear computed property
+//        guard let dec28 = calendar.date(from: DateComponents(year: year, month: 12, day: 28)),
+//              let weekOfYearDec28 = calendar.dateComponents([.weekOfYear], from: dec28).weekOfYear,
+//              let yearForWeekDec28 = calendar.dateComponents([.yearForWeekOfYear], from: dec28).yearForWeekOfYear else {
+//            return nil
+//        }
+//
+//        while current <= end {
+//            guard let currentWeekOfYear = calendar.dateComponents([.weekOfYear], from: current).weekOfYear,
+//                  let currentYearForWeek = calendar.dateComponents([.yearForWeekOfYear], from: current).yearForWeekOfYear else { break }
+//
+//            var negativeWeekNumber: Int
+//                if currentYearForWeek == yearForWeekDec28 {
+//                    negativeWeekNumber = currentWeekOfYear - weekOfYearDec28 - 1
+//                } else if currentYearForWeek > yearForWeekDec28 {
+//                    // If the current day is in the first week of the next year, we want the negative
+//                    // week number to reflect the number of weeks remaining in the next year.
+//                    negativeWeekNumber = currentWeekOfYear - 53
+//                } else {
+//                    // If the current day is in the last week of the previous year, we want the negative
+//                    // week number to reflect a negative offset indicating it's part of the previous year.
+//                    negativeWeekNumber = currentWeekOfYear - weekOfYearDec28 - 1
+//                }
+//            
+//            negativeWeekNumbers.append(negativeWeekNumber)
+//            
+//            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+//            current = nextDay
+//        }
+//
+//        _negativeWeekNumberByDayOfYear = negativeWeekNumbers
+//        return negativeWeekNumbers
+//    }
 
     private var _elapsedDaysInYearByMonth: [Int]?
     var elapsedDaysInYearByMonth: [Int]? {
@@ -219,14 +231,20 @@ public class Context {
     }
     
     //MARK: private
-
+    
+    lazy var calendar: Calendar = {
+        var cal = Calendar.current
+        cal.timeZone = TimeZone(secondsFromGMT: 0)! // Use UTC
+        return cal
+    }()
+    
     lazy var weekdaysInYear: [Int] = {
         return Array(repeating: 0...6, count: 54).flatMap { $0 }
     }()
     
     var leapYear: Bool {
         guard let year = self.year else { return false }
-        return Calendar.current.isLeapYear(year: year)
+        return calendar.isLeapYear(year: year)
     }
     
     private func resetYear() {
@@ -250,7 +268,7 @@ public class Context {
             return cachedValue
         }
         guard let firstDayOfYear = self.firstDayOfYear,
-              let endOfYearPlus7Days = firstDayOfYear.endOfYear(using: Calendar.current) else {
+              let endOfYearPlus7Days = firstDayOfYear.endOfYear(using: calendar) else {
             return nil
         }
         _daysInYear = (firstDayOfYear, endOfYearPlus7Days)
