@@ -7,10 +7,9 @@
 
 import Foundation
 
-// Assuming the Frequency class is already defined as shown earlier
 class Daily: Frequency {
     override func possibleDays() -> [Int?] {
-        guard let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: current_date) else { return [] }
+        guard let dayOfYear = calendar.ordinality(of: .day, in: .year, for: current_date) else { return [] }
         return [dayOfYear - 1] // Adjust for zero-based index
     }
     
@@ -19,4 +18,3 @@ class Daily: Frequency {
         return (.day, interval)
     }
 }
-
