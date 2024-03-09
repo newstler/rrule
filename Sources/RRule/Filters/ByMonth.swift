@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ByMonth {
+class ByMonth: Filter {
     let byMonths: [Int]
     unowned let context: Context
 

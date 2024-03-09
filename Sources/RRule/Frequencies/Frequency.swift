@@ -1,80 +1,73 @@
-////
-////  Frequency.swift
-////
-////
-////  Created by Yuri Sidorov on 07.03.2024.
-////
 //
-//import Foundation
+//  Frequency.swift
 //
-//class Frequency {
-//    var current_date: Date
-//    var filters: [Filter]
-//    var generator: Generator
-//    var timeset: [TimeSet] // Assuming TimeSet is a struct or class you have defined
-//    
-//    var context: Context // Context is assumed to be a class you have defined
-//    
-//    init(context: Context, filters: [Filter], generator: Generator, timeset: [TimeSet], startDate: Date?) {
-//        self.context = context
-//        self.current_date = startDate ?? context.dtstart
-//        self.filters = filters
-//        self.generator = generator
-//        self.timeset = timeset
-//    }
-//    
-//    func advance() {
-//        let advanceBy = ... // Determine how much to advance by based on your application's logic
-//        self.current_date = Calendar.current.date(byAdding: advanceBy, to: self.current_date)!.tap { newDate in
-//            if !sameMonth(firstDate: self.current_date, secondDate: newDate) {
-//                context.rebuild(year: newDate.year, month: newDate.month)
-//            }
-//        }
-//    }
-//    
-//    func nextOccurrences() -> [Date] {
-//        var possibleDaysOfYear = possibleDays() // Implement this method based on your rules
-//        
-//        if !filters.isEmpty {
-//            for (i, dayIndex) in possibleDaysOfYear.enumerated() {
-//                if filters.any { $0.reject(dayIndex: dayIndex) } { // Assuming Filter has a method `reject`
-//                    possibleDaysOfYear[i] = nil
-//                }
-//            }
-//        }
-//        
-//        return generator.combineDatesAndTimes(possibleDaysOfYear.compactMap { $0 }, timeset).tap {
-//            advance()
-//        }
-//    }
-//    
-//    static func forOptions(_ options: [String: Any]) -> Frequency {
-//        switch options["freq"] as? String {
-//        case "DAILY":
-//            return Daily(context: context, filters: filters, generator: generator, timeset: timeset) // Assuming these are classes that inherit from Frequency
-//        case "WEEKLY":
-//            if let simpleWeekly = options["simple_weekly"] as? Bool, simpleWeekly, options["bymonth"] == nil {
-//                return SimpleWeekly(context: context, filters: filters, generator: generator, timeset: timeset)
-//            } else {
-//                return Weekly(context: context, filters: filters, generator: generator, timeset: timeset)
-//            }
-//        case "MONTHLY":
-//            return Monthly(context: context, filters: filters, generator: generator, timeset: timeset)
-//        case "YEARLY":
-//            return Yearly(context: context, filters: filters, generator: generator, timeset: timeset)
-//        default:
-//            fatalError("Valid FREQ value is required")
-//        }
-//    }
-//    
-//    private func sameMonth(firstDate: Date, secondDate: Date) -> Bool {
-//        let calendar = Calendar.current
-//        return calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .month) && calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .year)
-//    }
-//    
-//    private func possibleDays() -> [Int] {
-//        // This method needs to calculate possible days based on the frequency and context.
-//        // You'll need to implement this according to the rules you are applying.
-//        return []
-//    }
-//}
+//
+//  Created by Yuri Sidorov on 07.03.2024.
+//
+
+import Foundation
+
+class Frequency {
+    var current_date: Date
+    let filters: [Filter]
+    let generator: Any
+    let timeset: Any // Specify the correct timeset type
+    unowned let context: Context
+
+    init(context: Context, filters: [Filter], generator: Generator, timeset: Any, start_date: Date?) {
+        self.context = context
+        self.current_date = start_date ?? context.dtstart
+        self.filters = filters
+        self.generator = generator
+        self.timeset = timeset
+    }
+
+    func advance() {
+        let interval = advanceBy()
+        guard let newDate = Calendar.current.date(byAdding: interval.component, value: interval.value, to: current_date) else { return }
+        if !sameMonth(current_date, newDate) {
+            context.rebuild(year: Calendar.current.component(.year, from: newDate), month: Calendar.current.component(.month, from: newDate))
+        }
+        current_date = newDate
+    }
+
+    func advanceBy() -> (component: Calendar.Component, value: Int) {
+        // This should be overridden by subclasses
+        return (.day, 1) // Default to advancing by one day
+    }
+    
+    // Define a 'possibleDays' method that subclasses should override.
+    // You might provide a default implementation here, or simply throw an error indicating it must be overridden.
+    func possibleDays() -> [Int?] {
+        fatalError("Subclasses must implement `possibleDays`.")
+    }
+    
+    func nextOccurrences() -> [Date] {
+        // Assuming `possibleDays` returns an array of optional integers,
+        // representing days of the year that could potentially include occurrences.
+        var possibleDaysOfYear = possibleDays()
+
+        // Apply filters to exclude certain days.
+        // Filters should be an array of objects conforming to a Filtering protocol, which includes a `reject` method.
+        for (index, day) in possibleDaysOfYear.enumerated() {
+            if let dayIndex = day, filters.contains(where: { $0.reject(index: dayIndex) }) {
+                possibleDaysOfYear[index] = nil
+            }
+        }
+
+        // Assuming `generator` conforms to a Generator protocol that includes a `combineDatesAndTimes` method,
+        // and `timeset` is compatible with what the generator expects.
+        let occurrences = generator.combineDatesAndTimes(dayset: possibleDaysOfYear.compactMap { $0 }, timeset: timeset)
+
+        // Advance the current date to prepare for the next calculation.
+        advance()
+
+        return occurrences
+    }
+
+    private func sameMonth(_ firstDate: Date, _ secondDate: Date) -> Bool {
+        let calendar = Calendar.current
+        return calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .month) &&
+               calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .year)
+    }
+}

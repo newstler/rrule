@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ByWeekDay {
+class ByWeekDay: Filter {
     unowned let context: Context
     let byWeekDays: [Int]
 

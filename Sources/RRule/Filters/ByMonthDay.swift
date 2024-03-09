@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ByMonthDay {
+class ByMonthDay: Filter {
     unowned let context: Context
     let positiveMonthDays: [Int]
     let negativeMonthDays: [Int]

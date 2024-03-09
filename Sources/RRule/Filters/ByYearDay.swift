@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ByYearDay {
+class ByYearDay: Filter {
     unowned let context: Context
     let byYearDays: [Int]
 

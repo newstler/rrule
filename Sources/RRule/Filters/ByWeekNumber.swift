@@ -9,7 +9,7 @@
 //
 //import Foundation
 //
-//class ByWeekNumber {
+//class ByWeekNumber: Filter {
 //    private let byWeekNumbers: [Int]
 //    private unowned let context: Context // Assuming 'Context' is a class with necessary properties
 //    
