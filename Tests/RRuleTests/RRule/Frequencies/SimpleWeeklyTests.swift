@@ -12,8 +12,9 @@ class SimpleWeeklyTests: XCTestCase {
     var context: Context!
     var simpleWeeklyFrequency: SimpleWeekly!
     var generator: AllOccurrences!
-    var timeset: [[String: [Int]]] = []
     let timeZone = TimeZone(identifier: "America/Los_Angeles")!
+    var date: Date!
+    var timeset: [[String: [Int]]]!
     
     lazy var calendar: Calendar = {
         var cal = Calendar.current
@@ -21,44 +22,42 @@ class SimpleWeeklyTests: XCTestCase {
         return cal
     }()
     
-    func testOccurrencesEveryWeek() {
-        let date = DateComponents(calendar: calendar, year: 1997, month: 1, day: 1).date!
+    override func setUp() {
+        super.setUp()
+        date = calendar.date(from: DateComponents(year: 1997, month: 1, day: 1))!
         context = Context(options: ["interval": 1], dtstart: date, tz: timeZone)
+        generator = AllOccurrences(context: context)
+    }
+
+    func addWeeksToDate(_ date: Date, weeks: Int) -> Date {
+        return Calendar.current.date(byAdding: .day, value: 7 * weeks, to: date)!
+    }
+
+    func testOccurrences(interval: Int, expectedOccurrences: [Date]) {
+        context.options["interval"] = interval
         timeset = [["hour": [calendar.component(.hour, from: date)], "minute": [calendar.component(.minute, from: date)], "second": [calendar.component(.second, from: date)]]]
-        simpleWeeklyFrequency = SimpleWeekly(context: context, filters: [], generator: AllOccurrences(context: context), timeset: timeset)
+        simpleWeeklyFrequency = SimpleWeekly(context: context, filters: [], generator: generator, timeset: [])
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
-        
-        XCTAssertEqual(simpleWeeklyFrequency.nextOccurrences(), [date])
-        XCTAssertEqual(simpleWeeklyFrequency.nextOccurrences(), [calendar.date(byAdding: .day, value: 7, to: date)!])
-        XCTAssertEqual(simpleWeeklyFrequency.nextOccurrences(), [calendar.date(byAdding: .day, value: 14, to: date)!])
+
+        let results = (1...expectedOccurrences.count).map { _ in simpleWeeklyFrequency.nextOccurrences() }.flatMap { $0 }
+        XCTAssertEqual(results, expectedOccurrences)
     }
-    
+
+    func testOccurrencesEveryWeek() {
+        let startDate = context.dtstart
+        let expectedDates = [0, 1, 2].map { addWeeksToDate(startDate, weeks: $0) }
+        testOccurrences(interval: 1, expectedOccurrences: expectedDates)
+    }
+
     func testOccurrencesEveryWeekWithNoTimeset() {
-        let date = DateComponents(calendar: calendar, year: 1997, month: 1, day: 1).date!
-        context = Context(options: ["interval": 1], dtstart: date, tz: timeZone)
-        simpleWeeklyFrequency = SimpleWeekly(context: context, filters: [], generator: AllOccurrences(context: context), timeset: [])
-        let components = calendar.dateComponents([.year, .month], from: date)
-        context.rebuild(year: components.year!, month: components.month!)
-        
-        XCTAssertEqual(simpleWeeklyFrequency.nextOccurrences(), [date])
-        XCTAssertEqual(simpleWeeklyFrequency.nextOccurrences(), [calendar.date(byAdding: .day, value: 7, to: date)!])
-        XCTAssertEqual(simpleWeeklyFrequency.nextOccurrences(), [calendar.date(byAdding: .day, value: 14, to: date)!])
+        simpleWeeklyFrequency = SimpleWeekly(context: context, filters: [], generator: generator, timeset: [])
+        testOccurrencesEveryWeek()
     }
-    
+
     func testOccurrencesEveryOtherWeek() {
-        let date = DateComponents(calendar: calendar, year: 1997, month: 1, day: 1).date!
-        context = Context(options: ["interval": 2], dtstart: date, tz: timeZone)
-        let timeset: [[String: [Int]]] = [
-            ["hour": [calendar.component(.hour, from: date)], "minute": [calendar.component(.minute, from: date)], "second": [calendar.component(.second, from: date)]]
-        ]
-        simpleWeeklyFrequency = SimpleWeekly(context: context, filters: [], generator: AllOccurrences(context: context), timeset: timeset)
-        let components = calendar.dateComponents([.year, .month], from: date)
-        context.rebuild(year: components.year!, month: components.month!)
-        
-        XCTAssertEqual(simpleWeeklyFrequency.nextOccurrences(), [date])
-        XCTAssertEqual(simpleWeeklyFrequency.nextOccurrences(), [calendar.date(byAdding: .day, value: 14, to: date)!])
-        XCTAssertEqual(simpleWeeklyFrequency.nextOccurrences(), [calendar.date(byAdding: .day, value: 28, to: date)!])
+        let startDate = context.dtstart
+        let expectedDates = [0, 2, 4].map { addWeeksToDate(startDate, weeks: $0) }
+        testOccurrences(interval: 2, expectedOccurrences: expectedDates)
     }
 }
-

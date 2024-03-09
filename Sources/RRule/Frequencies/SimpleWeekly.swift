@@ -18,7 +18,6 @@ class SimpleWeekly: Frequency {
     }
 
     func correctCurrentDateIfNeeded() {
-        // Directly assign the value to targetWday without using guard let
         let targetWday = (context.options["byweekday"] as? [Weekday])?.first?.index ?? calendar.component(.weekday, from: context.dtstart) - 1
 
         while calendar.component(.weekday, from: current_date) - 1 != targetWday {
