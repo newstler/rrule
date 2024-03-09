@@ -17,8 +17,6 @@ public class Context {
     var lastYear: Int?
     var lastMonth: Int?
     
-
-    
     private var _yearLengthInDays: Int?
     var yearLengthInDays: Int? {
         if let cachedValue = _yearLengthInDays {
@@ -258,7 +256,7 @@ public class Context {
         _negativeMonthDayByDayOfYear = nil
         _weekdayByDayOfYear = nil
         _weekNumberByDayOfYear = nil
-        _negativeWeekNumberByDayOfYear = nil
+//        _negativeWeekNumberByDayOfYear = nil
         _elapsedDaysInYearByMonth = nil
     }
     
