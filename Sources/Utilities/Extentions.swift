@@ -36,5 +36,13 @@ extension Date {
         components.day = 0
         return calendar.date(from: components)
     }
+    
+    /// Floors the date to the start of its second in the specified timezone.
+    func floorToSeconds(in timezone: TimeZone) -> Date {
+        var calendar = Calendar.current
+        calendar.timeZone = timezone
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: self)
+        return calendar.date(from: components) ?? self
+    }
 }
 

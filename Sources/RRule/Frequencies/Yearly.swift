@@ -18,4 +18,3 @@ class Yearly: Frequency {
         return (.year, interval)
     }
 }
-

@@ -66,9 +66,37 @@ class Frequency {
 
         return occurrences
     }
+    
+    static func forOptions(_ options: [String: Any]) throws -> Frequency.Type {
+        guard let freq = options["FREQ"] as? String else {
+            throw InvalidRRule(reason: "Valid FREQ value is required")
+        }
+        
+        switch freq.uppercased() {
+        case "DAILY":
+            return Daily.self
+        case "WEEKLY":
+            if let simpleWeekly = options["simple_weekly"] as? Bool, simpleWeekly, options["bymonth"] == nil {
+                return SimpleWeekly.self
+            } else {
+                return Weekly.self
+            }
+        case "MONTHLY":
+            return Monthly.self
+        case "YEARLY":
+            return Yearly.self
+        default:
+            throw InvalidRRule(reason: "Unsupported FREQ value: \(freq)")
+        }
+    }
 
     private func sameMonth(_ firstDate: Date, _ secondDate: Date) -> Bool {
         return calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .month) &&
                calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .year)
     }
+}
+
+// Define the `InvalidRRule` error to be used in the `forOptions` method
+struct InvalidRRule: Error {
+    let reason: String
 }
