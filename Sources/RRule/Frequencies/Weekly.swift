@@ -28,10 +28,11 @@ class Weekly: Frequency {
     
     private func daysToAdvance(date: Date) -> Int {
         guard let wkst = context.options["wkst"] as? Int,
-              let weekday = calendar.ordinality(of: .weekday, in: .weekOfYear, for: date),
               let interval = context.options["interval"] as? Int else {
-            return 7 // Default to advancing by one week if wkst or interval is not set
+            return 7 // Assuming a default interval of 1 week if not specified.
         }
+
+        let weekday = calendar.component(.weekday, from: date) - 1 // Adjust for zero-based indexing, assuming the calendar starts at 0.
         
         if wkst > weekday {
             return -(weekday + 1 + (6 - wkst)) + interval * 7

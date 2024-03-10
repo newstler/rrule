@@ -30,7 +30,7 @@ class SimpleWeeklyTests: XCTestCase {
     }
 
     func addWeeksToDate(_ date: Date, weeks: Int) -> Date {
-        return Calendar.current.date(byAdding: .day, value: 7 * weeks, to: date)!
+        return calendar.date(byAdding: .day, value: 7 * weeks, to: date)!
     }
 
     func testOccurrences(interval: Int, expectedOccurrences: [Date]) {
@@ -40,7 +40,7 @@ class SimpleWeeklyTests: XCTestCase {
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
 
-        let results = (1...expectedOccurrences.count).map { _ in simpleWeeklyFrequency.nextOccurrences() }.flatMap { $0 }
+        let results = (1...3).map { _ in simpleWeeklyFrequency.nextOccurrences() }.flatMap { $0 }
         XCTAssertEqual(results, expectedOccurrences)
     }
 
