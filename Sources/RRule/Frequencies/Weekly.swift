@@ -9,7 +9,7 @@ import Foundation
 
 class Weekly: Frequency {
     override func possibleDays() -> [Int?] {
-        guard let dayOfYear = calendar.ordinality(of: .day, in: .year, for: current_date) else { return [] }
+        guard let dayOfYear = calendar.ordinality(of: .day, in: .year, for: currentDate) else { return [] }
         var i = dayOfYear - 1 // Convert to 0-indexed
         var possibleDays: [Int] = []
         for _ in 0..<7 {
@@ -23,7 +23,7 @@ class Weekly: Frequency {
     }
     
     override func advanceBy() -> (component: Calendar.Component, value: Int) {
-        return (.day, daysToAdvance(date: current_date))
+        return (.day, daysToAdvance(date: currentDate))
     }
     
     private func daysToAdvance(date: Date) -> Int {

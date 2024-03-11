@@ -27,7 +27,7 @@ class MonthlyTests: XCTestCase {
         let timeset: [[String: [Int]]] = [
             ["hour": [calendar.component(.hour, from: date)], "minute": [calendar.component(.minute, from: date)], "second": [calendar.component(.second, from: date)]]
         ]
-        monthlyFrequency = Monthly(context: context, filters: [ByMonthDay(byMonthDays: [calendar.component(.day, from: date)], context: context)], generator: AllOccurrences(context: context), timeset: timeset, start_date: date)
+        monthlyFrequency = Monthly(context: context, filters: [ByMonthDay(byMonthDays: [calendar.component(.day, from: date)], context: context)], generator: AllOccurrences(context: context), timeset: timeset, startDate: date)
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
         
@@ -42,7 +42,7 @@ class MonthlyTests: XCTestCase {
         let timeset: [[String: [Int]]] = [
             ["hour": [calendar.component(.hour, from: date)], "minute": [calendar.component(.minute, from: date)], "second": [calendar.component(.second, from: date)]]
         ]
-        monthlyFrequency = Monthly(context: context, filters: [ByMonthDay(byMonthDays: [calendar.component(.day, from: date)], context: context)], generator: AllOccurrences(context: context), timeset: timeset, start_date: date)
+        monthlyFrequency = Monthly(context: context, filters: [ByMonthDay(byMonthDays: [calendar.component(.day, from: date)], context: context)], generator: AllOccurrences(context: context), timeset: timeset, startDate: date)
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
         
@@ -57,7 +57,7 @@ class MonthlyTests: XCTestCase {
         let timeset: [[String: [Int]]] = [
             ["hour": [calendar.component(.hour, from: date)], "minute": [calendar.component(.minute, from: date)], "second": [calendar.component(.second, from: date)]]
         ]
-        monthlyFrequency = Monthly(context: context, filters: [ByMonthDay(byMonthDays: [calendar.component(.day, from: date)], context: context)], generator: AllOccurrences(context: context), timeset: timeset, start_date: date)
+        monthlyFrequency = Monthly(context: context, filters: [ByMonthDay(byMonthDays: [calendar.component(.day, from: date)], context: context)], generator: AllOccurrences(context: context), timeset: timeset, startDate: date)
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
         
@@ -72,7 +72,7 @@ class MonthlyTests: XCTestCase {
         let timeset: [[String: [Int]]] = [
             ["hour": [calendar.component(.hour, from: date)], "minute": [calendar.component(.minute, from: date)], "second": [calendar.component(.second, from: date)]]
         ]
-        monthlyFrequency = Monthly(context: context, filters: [ByMonthDay(byMonthDays: [calendar.component(.day, from: date)], context: context)], generator: AllOccurrences(context: context), timeset: timeset, start_date: date)
+        monthlyFrequency = Monthly(context: context, filters: [ByMonthDay(byMonthDays: [calendar.component(.day, from: date)], context: context)], generator: AllOccurrences(context: context), timeset: timeset, startDate: date)
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
         

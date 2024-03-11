@@ -8,7 +8,7 @@
 import Foundation
 
 class Frequency {
-    var current_date: Date
+    var currentDate: Date
     let filters: [Filter]
     let generator: Generator
     let timeset: [[String: [Int]]]
@@ -18,9 +18,9 @@ class Frequency {
         return context.calendar
     }()
 
-    init(context: Context, filters: [Filter], generator: Generator, timeset: [[String: [Int]]], start_date: Date? = nil) {
+    required init(context: Context, filters: [Filter], generator: Generator, timeset: [[String: [Int]]], startDate: Date? = nil) {
         self.context = context
-        self.current_date = start_date ?? context.dtstart
+        self.currentDate = startDate ?? context.dtstart
         self.filters = filters
         self.generator = generator
         self.timeset = timeset
@@ -28,11 +28,11 @@ class Frequency {
 
     func advance() {
         let interval = advanceBy()
-        guard let newDate = calendar.date(byAdding: interval.component, value: interval.value, to: current_date) else { return }
-        if !sameMonth(current_date, newDate) {
+        guard let newDate = calendar.date(byAdding: interval.component, value: interval.value, to: currentDate) else { return }
+        if !sameMonth(currentDate, newDate) {
             context.rebuild(year: calendar.component(.year, from: newDate), month: calendar.component(.month, from: newDate))
         }
-        current_date = newDate
+        currentDate = newDate
     }
 
     func advanceBy() -> (component: Calendar.Component, value: Int) {

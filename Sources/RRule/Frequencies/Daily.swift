@@ -9,7 +9,7 @@ import Foundation
 
 class Daily: Frequency {
     override func possibleDays() -> [Int?] {
-        guard let dayOfYear = calendar.ordinality(of: .day, in: .year, for: current_date) else { return [] }
+        guard let dayOfYear = calendar.ordinality(of: .day, in: .year, for: currentDate) else { return [] }
         return [dayOfYear - 1] // Adjust for zero-based index
     }
     

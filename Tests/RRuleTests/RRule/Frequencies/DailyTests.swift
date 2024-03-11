@@ -24,7 +24,7 @@ class DailyTests: XCTestCase {
     func testSequentialDays() {
         let date = DateComponents(calendar: calendar, timeZone: timeZone, year: 1997, month: 1, day: 1).date!
         context = Context(options: ["interval": 1], dtstart: date, tz: timeZone)
-        dailyFrequency = Daily(context: context, filters: filters, generator: AllOccurrences(context: context), timeset: timeset, start_date: date)
+        dailyFrequency = Daily(context: context, filters: filters, generator: AllOccurrences(context: context), timeset: timeset, startDate: date)
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
         
@@ -36,7 +36,7 @@ class DailyTests: XCTestCase {
     func testEveryOtherDay() {
         let date = DateComponents(calendar: calendar, timeZone: timeZone, year: 1997, month: 1, day: 1).date!
         context = Context(options: ["interval": 2], dtstart: date, tz: timeZone)
-        dailyFrequency = Daily(context: context, filters: filters, generator: AllOccurrences(context: context), timeset: timeset, start_date: date)
+        dailyFrequency = Daily(context: context, filters: filters, generator: AllOccurrences(context: context), timeset: timeset, startDate: date)
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
         
@@ -48,7 +48,7 @@ class DailyTests: XCTestCase {
     func testEndOfFebruary() {
         let date = DateComponents(calendar: calendar, timeZone: timeZone, year: 1997, month: 2, day: 28).date!
         context = Context(options: ["interval": 1], dtstart: date, tz: timeZone)
-        dailyFrequency = Daily(context: context, filters: filters, generator: AllOccurrences(context: context), timeset: timeset, start_date: date)
+        dailyFrequency = Daily(context: context, filters: filters, generator: AllOccurrences(context: context), timeset: timeset, startDate: date)
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
         
@@ -60,7 +60,7 @@ class DailyTests: XCTestCase {
     func testEndOfYear() {
         let date = DateComponents(calendar: calendar, timeZone: timeZone, year: 1997, month: 12, day: 31).date!
         context = Context(options: ["interval": 1], dtstart: date, tz: timeZone)
-        dailyFrequency = Daily(context: context, filters: filters, generator: AllOccurrences(context: context), timeset: timeset, start_date: date)
+        dailyFrequency = Daily(context: context, filters: filters, generator: AllOccurrences(context: context), timeset: timeset, startDate: date)
         let components = calendar.dateComponents([.year, .month], from: date)
         context.rebuild(year: components.year!, month: components.month!)
         

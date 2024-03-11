@@ -14,24 +14,20 @@ class Rule {
     let exdate: [Date]
     var options: [String: Any] = [:] // Assuming options is a dictionary of parsed RRULE components
     var frequencyType: Frequency.Type? // Using a static type reference to the Frequency class or its subclasses
-    let maxYear: Int
+    let maxYear: Int?
     let maxDate: Date
-    
-    lazy var calendar: Calendar = {
-        var cal = Calendar.current
-        cal.timeZone = tz
-        return cal
-    }()
+    var calendar: Calendar = Calendar.current
     
     init(rrule: String, dtstart: Date = Date(), tzid: String = "UTC", exdate: [Date] = [], maxYear: Int? = nil) {
         self.tz = TimeZone(identifier: tzid)!
+        self.calendar.timeZone = tz
         self.rrule = rrule
         self.dtstart = dtstart.floorToSeconds(in: tz)
         self.exdate = exdate
-        self.options = parseOptions(rrule: rrule)
-        self.frequencyType = try? Frequency.forOptions(options)
         self.maxYear = maxYear ?? 9999
         self.maxDate = DateComponents(calendar: calendar, year: self.maxYear).date!
+        self.options = try! parseOptions(rrule)
+        self.frequencyType = try? Frequency.forOptions(options)
     }
     
     var description: String {
@@ -53,18 +49,72 @@ class Rule {
 //        return allUntil(startDate: flooredStartDate, limit: limit).filter { $0 >= flooredStartDate }
 //    }
 //    
-//    func each(floorDate: Date? = nil, _ body: (Date) throws -> Void) rethrows {
-//        var floorDate = floorDate
-//        if countOrIntervalPresent() || floorDate == nil || dtstart > floorDate! {
-//            floorDate = dtstart
+    func each(floorDate: Date? = nil, _ block: ((Date) -> Void)? = nil) {
+        var effectiveFloorDate = floorDate
+        
+        // If we have a COUNT or INTERVAL option, or floorDate is nil, or dtstart is after floorDate, we start from dtstart
+        if countOrIntervalPresent() || effectiveFloorDate == nil || dtstart > effectiveFloorDate! {
+            effectiveFloorDate = dtstart
+        }
+        
+        guard let block = block else {
+            // If no block is provided, we might want to return an enumerator or handle differently
+            return
+        }
+        
+        var context = Context(options: options, dtstart: dtstart, tz: tz)
+        let components = calendar.dateComponents([.year, .month], from: effectiveFloorDate!)
+        context.rebuild(year: components.year!, month: components.month!)
+        
+        let timeset = options["timeset"] as? [[String: [Int]]]
+        var count = options["count"] as? Int
+        
+        var filters: [Filter] = []
+
+        if let byMonth = options["bymonth"] as? [Int] {
+            filters.append(ByMonth(byMonths: byMonth, context: context))
+        }
+        
+        // TODO: Implement after ByWeekNumber is fixed
+//        if let byWeekNo = options["byweekno"] as? [Int] {
+//            filters.append(ByWeekNumber(byWeekNumbers: byWeekNo, context: context))
+//        }
+
+        if let byWeekDay = options["byweekday"] as? [Weekday] {
+            filters.append(ByWeekDay(weekdays: byWeekDay, context: context))
+        }
+
+        if let byYearDay = options["byyearday"] as? [Int] {
+            filters.append(ByYearDay(byYearDays: byYearDay, context: context))
+        }
+
+        if let byMonthDay = options["bymonthday"] as? [Int] {
+            filters.append(ByMonthDay(byMonthDays: byMonthDay, context: context))
+        }
+        
+        let generator: Generator = options["bysetpos"] != nil ? BySetPosition(bySetPositions: options["bysetpos"] as! [Int], context: context) : AllOccurrences(context: context)
+        
+//        guard let frequencyType = try? Frequency.forOptions(options),
+//              let frequency = frequencyType.init(context: context, filters: filters, generator: generator, timeset: timeset ?? [], startDate: effectiveFloorDate) else {
+//            return
 //        }
 //        
-//        // Swift's Sequence and IteratorProtocol can be used to create a custom iterator for enumeration
-//        
-//        // This part of code would require adapting your filtering and iteration logic to Swift
-//        // Including converting context setup, filter setup, and the actual enumeration loop
-//    }
-//    
+//        while true {
+//            guard frequency.currentDate.year <= maxYear else { break }
+//            
+//            for occurrence in frequency.nextOccurrences() {
+//                guard occurrence >= dtstart else { continue }
+//                guard effectiveFloorDate == nil || occurrence >= effectiveFloorDate! else { continue }
+//                if let until = options["until"] as? Date, occurrence > until { return }
+//                if let c = count, c - 1 < 0 { return } else { count = (count ?? 0) - 1 }
+//                
+//                if !exdate.contains(occurrence) {
+//                    block(occurrence)
+//                }
+//            }
+//        }
+    }
+//
 //    func next() -> Date? {
 //        // Implement functionality to get the next date
 //        // This may require keeping track of the current state in an iterator-like object
@@ -81,7 +131,7 @@ class Rule {
         // Remove RRULE: prefix to prevent parsing options incorrectly.
         let params = rule.replacingOccurrences(of: "RRULE:", with: "").split(separator: ";")
         for param in params {
-            let parts = param.split(separator: '=')
+            let parts = param.split(separator: "=")
             guard parts.count == 2, let option = parts.first, let value = parts.last else { continue }
             
             switch option {
@@ -91,7 +141,7 @@ class Rule {
                 if let i = Int(value), i >= 0 {
                     options["count"] = i
                 } else {
-                    throw InvalidRRule.error("COUNT must be a non-negative integer")
+                    throw InvalidRRule(reason: "COUNT must be a non-negative integer")
                 }
             case "UNTIL":
                 // The value of the UNTIL rule part MUST have the same value type as the "DTSTART" property.
@@ -100,7 +150,7 @@ class Rule {
                 if let i = Int(value), i > 0 {
                     options["interval"] = i
                 } else {
-                    throw InvalidRRule.error("INTERVAL must be a positive integer")
+                    throw InvalidRRule(reason: "INTERVAL must be a positive integer")
                 }
             case "BYHOUR", "BYMINUTE", "BYSECOND":
                 options[String(option)] = value.split(separator: ",").compactMap { Int($0) }
@@ -122,8 +172,15 @@ class Rule {
     }
 
     
-//    private func countOrIntervalPresent() -> Bool {
-//        // Implement logic to check for count or interval presence
-//        // This will depend on how you've structured options parsing
-//    }
+    func countOrIntervalPresent() -> Bool {
+        if let count = options["count"] as? Int, count > 0 {
+            return true
+        }
+        
+        if let interval = options["interval"] as? Int, interval > 1 {
+            return true
+        }
+        
+        return false
+    }
 }
