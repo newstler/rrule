@@ -50,43 +50,6 @@ class Rule {
 //    }
 //    
     
-    func makeIterator(floorDate: Date? = nil) -> AnyIterator<Date> {
-        var effectiveFloorDate = floorDate ?? self.dtstart
-        // Prepare context, filters, and generator as in the `each` method
-        
-        let context = Context(options: options, dtstart: dtstart, tz: tz)
-        // Setup components, filters, generator, frequency, etc.
-        
-        var currentDate = effectiveFloorDate
-        let frequencyType = try! Frequency.forOptions(options)
-        let frequency = frequencyType.init(context: context, filters: filters, generator: generator, timeset: timeset ?? [], startDate: effectiveFloorDate)
-        
-        return AnyIterator {
-            while true {
-                guard let year = Calendar.current.dateComponents([.year], from: currentDate).year, year <= self.maxYear else {
-                    return nil
-                }
-                
-                let nextOccurrences = frequency.nextOccurrences()
-                for occurrence in nextOccurrences {
-                    if occurrence >= self.dtstart,
-                       effectiveFloorDate == nil || occurrence >= effectiveFloorDate!,
-                       let until = self.options["until"] as? Date, occurrence <= until,
-                       !self.exdate.contains(occurrence) {
-                        
-                        currentDate = occurrence
-                        return occurrence
-                    }
-                }
-                // Update `currentDate` to the next date according to frequency, not to get stuck in an infinite loop
-                // This requires adjusting your `Frequency` class to support advancing to the next date without generating occurrences
-                guard let nextDate = frequency.advance(currentDate) else {
-                    return nil
-                }
-                currentDate = nextDate
-            }
-        }
-    }
     
     func each(floorDate: Date? = nil, _ block: ((Date) -> Void)? = nil) -> AnyIterator<Date> {
         var currentDate = floorDate
