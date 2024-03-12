@@ -7,7 +7,7 @@
 
 import Foundation
 
-class Rule {
+class Rule: Sequence {
     let dtstart: Date
     let tz: TimeZone
     let rrule: String
@@ -51,7 +51,7 @@ class Rule {
 //    
     
     
-    func each(floorDate: Date? = nil, _ block: ((Date) -> Void)? = nil) -> AnyIterator<Date> {
+    func each(floorDate: Date? = nil, _ block: ((Date) -> Void)? = nil) -> AnyIterator<Date?> {
         var currentDate = floorDate
         
         // If we have a COUNT or INTERVAL option, or floorDate is nil, or dtstart is after floorDate, we start from dtstart
@@ -86,9 +86,9 @@ class Rule {
             filters.append(ByWeekDay(weekdays: byWeekDay, context: context))
         }
 
-        if let byYearDay = options["byyearday"] as? [Int] {
-            filters.append(ByYearDay(byYearDays: byYearDay, context: context))
-        }
+//        if let byYearDay = options["byyearday"] as? [Int] {
+//            filters.append(ByYearDay(byYearDays: byYearDay, context: context))
+//        }
 
         if let byMonthDay = options["bymonthday"] as? [Int] {
             filters.append(ByMonthDay(byMonthDays: byMonthDay, context: context))
@@ -96,13 +96,13 @@ class Rule {
         
         let generator: Generator = options["bysetpos"] != nil ? BySetPosition(bySetPositions: options["bysetpos"] as! [Int], context: context) : AllOccurrences(context: context)
         
-        let frequencyType = try! Frequency.forOptions(options)
+        let frequencyType = (try? Frequency.forOptions(options)) ?? Monthly.self
         let frequency = frequencyType.init(context: context, filters: filters, generator: generator, timeset: timeset ?? [], startDate: currentDate)
         
-        return AnyIterator {
+        return AnyIterator<Date?> {
             while true {
                 guard let year = calendar.dateComponents([.year], from: currentDate!).year, year <= self.maxYear else {
-                     return nil
+                     return
                 }
                 
                 let nextOccurrences = frequency.nextOccurrences()
