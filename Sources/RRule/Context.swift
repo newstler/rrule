@@ -168,54 +168,6 @@ public class Context {
         _weekNumberByDayOfYear = weekNumbers
         return weekNumbers
     }
-    
-    // FIXME: Doesn't work because of difference how weeks of years are calculated in Ruby and here
-//    private var _negativeWeekNumberByDayOfYear: [Int]?
-//    var negativeWeekNumberByDayOfYear: [Int]? {
-//        if let cachedValue = _negativeWeekNumberByDayOfYear {
-//            return cachedValue
-//        }
-//        
-//        guard let start = self.daysInYear?.start,
-//              let end = self.daysInYear?.end,
-//              let year = self.year else { return nil }
-//        
-//        var negativeWeekNumbers = [Int]()
-//        var current = start
-//        
-//        // Inside your negativeWeekNumberByDayOfYear computed property
-//        guard let dec28 = calendar.date(from: DateComponents(year: year, month: 12, day: 28)),
-//              let weekOfYearDec28 = calendar.dateComponents([.weekOfYear], from: dec28).weekOfYear,
-//              let yearForWeekDec28 = calendar.dateComponents([.yearForWeekOfYear], from: dec28).yearForWeekOfYear else {
-//            return nil
-//        }
-//
-//        while current <= end {
-//            guard let currentWeekOfYear = calendar.dateComponents([.weekOfYear], from: current).weekOfYear,
-//                  let currentYearForWeek = calendar.dateComponents([.yearForWeekOfYear], from: current).yearForWeekOfYear else { break }
-//
-//            var negativeWeekNumber: Int
-//                if currentYearForWeek == yearForWeekDec28 {
-//                    negativeWeekNumber = currentWeekOfYear - weekOfYearDec28 - 1
-//                } else if currentYearForWeek > yearForWeekDec28 {
-//                    // If the current day is in the first week of the next year, we want the negative
-//                    // week number to reflect the number of weeks remaining in the next year.
-//                    negativeWeekNumber = currentWeekOfYear - 53
-//                } else {
-//                    // If the current day is in the last week of the previous year, we want the negative
-//                    // week number to reflect a negative offset indicating it's part of the previous year.
-//                    negativeWeekNumber = currentWeekOfYear - weekOfYearDec28 - 1
-//                }
-//            
-//            negativeWeekNumbers.append(negativeWeekNumber)
-//            
-//            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: current) else { break }
-//            current = nextDay
-//        }
-//
-//        _negativeWeekNumberByDayOfYear = negativeWeekNumbers
-//        return negativeWeekNumbers
-//    }
 
     private var _elapsedDaysInYearByMonth: [Int]?
     var elapsedDaysInYearByMonth: [Int]? {
