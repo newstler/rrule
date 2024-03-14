@@ -75,7 +75,6 @@ class Rule: Sequence {
         return results
     }
 
-    
     func parseOptions(_ rule: String) throws -> [String: Any] {
         var options: [String: Any] = ["interval": 1, "wkst": 1]
         
@@ -103,17 +102,63 @@ class Rule: Sequence {
                 } else {
                     throw InvalidRRule(reason: "INTERVAL must be a positive integer")
                 }
-            case "BYHOUR", "BYMINUTE", "BYSECOND":
-                options[String(option)] = value.split(separator: ",").compactMap { Int($0) }
+            case "BYHOUR", "BYMINUTE", "BYSECOND", "BYSETPOS", "BYMONTH", "BYMONTHDAY", "BYWEEKNO", "BYYEARDAY":
+                options[String(option).lowercased()] = value.split(separator: ",").compactMap { Int($0) }
             case "BYDAY":
                 options["byweekday"] = value.split(separator: ",").compactMap { Weekday.parse(String($0)) }
-            case "BYSETPOS", "BYMONTH", "BYMONTHDAY", "BYWEEKNO", "BYYEARDAY":
-                options[String(option)] = value.split(separator: ",").compactMap { Int($0) }
             case "WKST":
                 options["wkst"] = RRule.weekdays.firstIndex(of: String(value))
             default:
                 break
             }
+        }
+        
+        if !(options.keys.contains("byweekno") ||
+             options.keys.contains("byyearday") ||
+             options.keys.contains("bymonthday") ||
+             options.keys.contains("byweekday")) {
+            
+            switch options["freq"] as? String {
+            case "YEARLY":
+                if options["bymonth"] == nil {
+                    options["bymonth"] = [calendar.component(.month, from: dtstart)]
+                }
+                options["bymonthday"] = [calendar.component(.day, from: dtstart)]
+            case "MONTHLY":
+                options["bymonthday"] = [calendar.component(.day, from: dtstart)]
+            case "WEEKLY":
+                options["simple_weekly"] = true
+                let weekday = calendar.component(.weekday, from: dtstart)
+                options["byweekday"] = [Weekday(index: weekday - 1)]
+            default:
+                break
+            }
+        }
+        
+        // Construct timeset only if time-related options are explicitly provided
+        var timeset: [String: [Int]] = [:]
+        
+        if let byHour = options["byhour"] as? [Int], !byHour.isEmpty {
+            timeset["hour"] = byHour
+        } else {
+             timeset["hour"] = [calendar.component(.hour, from: dtstart)]
+        }
+
+        if let byMinute = options["byminute"] as? [Int], !byMinute.isEmpty {
+            timeset["minute"] = byMinute
+        } else {
+            timeset["minute"] = [calendar.component(.minute, from: dtstart)]
+        }
+
+        if let bySecond = options["bysecond"] as? [Int], !bySecond.isEmpty {
+            timeset["second"] = bySecond
+        } else {
+             timeset["second"] = [calendar.component(.second, from: dtstart)]
+        }
+        
+        // If any of byhour, byminute, or bysecond were provided, add timeset to options
+        if !timeset.isEmpty {
+            options["timeset"] = [timeset]
         }
         
         return options
