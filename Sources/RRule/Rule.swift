@@ -172,8 +172,6 @@ class RuleIterator: IteratorProtocol {
     private var filters: [Filter] = []
     private let generator: Generator
     private let frequency: Frequency // Assuming Frequency is a class you have that can generate dates
-    private var occurrences: [Date] = []
-    private var currentIndex = 0
     
     init(rule: Rule, startDate: Date? = nil) {
         self.rule = rule
@@ -224,7 +222,8 @@ class RuleIterator: IteratorProtocol {
     }
     
     func next() -> Date? {
-        guard let nextDate = frequency.nextOccurrences().first else { return nil }
+        let occurrences = frequency.nextOccurrences()
+        guard let nextDate = occurrences.first else { return nil }
         
         // Apply the checks as per Ruby logic
         guard nextDate >= rule.dtstart,
