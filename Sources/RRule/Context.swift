@@ -17,6 +17,21 @@ public class Context {
     var lastYear: Int?
     var lastMonth: Int?
     
+    lazy var calendar: Calendar = {
+        var cal = Calendar.current
+        cal.timeZone = tz
+        return cal
+    }()
+    
+    lazy var weekdaysInYear: [Int] = {
+        return Array(repeating: 0...6, count: 54).flatMap { $0 }
+    }()
+    
+    var leapYear: Bool {
+        guard let year = self.year else { return false }
+        return calendar.isLeapYear(year: year)
+    }
+    
     private var _yearLengthInDays: Int?
     var yearLengthInDays: Int? {
         if let cachedValue = _yearLengthInDays {
@@ -180,22 +195,28 @@ public class Context {
         return _elapsedDaysInYearByMonth
     }
     
-    //MARK: private
-    
-    lazy var calendar: Calendar = {
-        var cal = Calendar.current
-        cal.timeZone = tz
-        return cal
-    }()
-    
-    lazy var weekdaysInYear: [Int] = {
-        return Array(repeating: 0...6, count: 54).flatMap { $0 }
-    }()
-    
-    var leapYear: Bool {
-        guard let year = self.year else { return false }
-        return calendar.isLeapYear(year: year)
+    private var _daysInYear: (start: Date, end: Date)?
+    var daysInYear: (start: Date, end: Date)? {
+        if let cachedValue = _daysInYear {
+            return cachedValue
+        }
+        guard let firstDayOfYear = self.firstDayOfYear,
+              let endOfYearPlus7Days = firstDayOfYear.endOfYear(using: calendar) else {
+            return nil
+        }
+        _daysInYear = (firstDayOfYear, endOfYearPlus7Days)
+        return _daysInYear
     }
+    
+    //MARK: Init
+
+    init(options: [String: Any], dtstart: Date, tz: TimeZone) {
+        self.options = options
+        self.dtstart = dtstart
+        self.tz = tz
+    }
+    
+    //MARK: Functions
     
     private func resetYear() {
         _daysInYear = nil
@@ -210,19 +231,6 @@ public class Context {
         _weekNumberByDayOfYear = nil
 //        _negativeWeekNumberByDayOfYear = nil
         _elapsedDaysInYearByMonth = nil
-    }
-    
-    private var _daysInYear: (start: Date, end: Date)?
-    var daysInYear: (start: Date, end: Date)? {
-        if let cachedValue = _daysInYear {
-            return cachedValue
-        }
-        guard let firstDayOfYear = self.firstDayOfYear,
-              let endOfYearPlus7Days = firstDayOfYear.endOfYear(using: calendar) else {
-            return nil
-        }
-        _daysInYear = (firstDayOfYear, endOfYearPlus7Days)
-        return _daysInYear
     }
     
     func dayOfYearWithinRange(weekday: Weekday, yearDayStart: Int, yearDayEnd: Int) -> Int? {
@@ -248,14 +256,6 @@ public class Context {
         }
         
         return nil
-    }
-    
-    //MARK: Init
-
-    init(options: [String: Any], dtstart: Date, tz: TimeZone) {
-        self.options = options
-        self.dtstart = dtstart
-        self.tz = tz
     }
     
     func rebuild(year: Int, month: Int) {

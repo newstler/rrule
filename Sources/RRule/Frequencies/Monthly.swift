@@ -10,11 +10,11 @@ import Foundation
 class Monthly: Frequency {
     override func possibleDays() -> [Int?] {
         // Calculate the range of days in the current month
-        guard let range = calendar.range(of: .day, in: .month, for: currentDate) else { return [] }
+        guard let range = context.calendar.range(of: .day, in: .month, for: currentDate) else { return [] }
         
         // Adjusting for zero-based index by subtracting 1 from each day's ordinality
-        let startDayOfYear = calendar.ordinality(of: .day, in: .year, for: calendar.date(from: DateComponents(year: calendar.component(.year, from: currentDate), month: calendar.component(.month, from: currentDate), day: range.lowerBound))!)!
-        let endDayOfYear = calendar.ordinality(of: .day, in: .year, for: calendar.date(from: DateComponents(year: calendar.component(.year, from: currentDate), month: calendar.component(.month, from: currentDate), day: range.upperBound - 1))!)!
+        let startDayOfYear = context.calendar.ordinality(of: .day, in: .year, for: context.calendar.date(from: DateComponents(year: context.calendar.component(.year, from: currentDate), month: context.calendar.component(.month, from: currentDate), day: range.lowerBound))!)!
+        let endDayOfYear = context.calendar.ordinality(of: .day, in: .year, for: context.calendar.date(from: DateComponents(year: context.calendar.component(.year, from: currentDate), month: context.calendar.component(.month, from: currentDate), day: range.upperBound - 1))!)!
         
         return (startDayOfYear...endDayOfYear).map { $0 - 1 }
     }

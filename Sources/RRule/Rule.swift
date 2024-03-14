@@ -121,24 +121,67 @@ class Rule: Sequence {
 }
 
 class RuleIterator: IteratorProtocol {
-    private var rule: Rule
-    private var current: Date?
-    private var frequency: Frequency? // Assuming Frequency is a class you have that can generate dates
+    private let rule: Rule
+    private var currentDate: Date
+    private let context: Context
+    private let timeset: [[String: [Int]]]?
     private var count: Int?
-    private var options: [String: Any] = [:]
+    private var filters: [Filter] = []
+    private let generator: Generator
+    private let frequency: Frequency // Assuming Frequency is a class you have that can generate dates
     
     init(rule: Rule, startDate: Date? = nil) {
         self.rule = rule
-        self.current = startDate ?? rule.dtstart
-        // Initialize frequency, count, and any other necessary properties here
+        
+        // Determine whether to use the provided startDate or fall back to rule.dtstart,
+        // and apply flooring to seconds as necessary.
+        let useRuleStart = startDate == nil || rule.dtstart > startDate! || countOrIntervalPresent()
+
+        // If any condition is met, use rule.dtstart, floored to seconds in the rule's timezone;
+        // otherwise, use the provided startDate, also considering flooring to seconds.
+        self.currentDate = useRuleStart ? rule.dtstart.floorToSeconds(in: rule.tz) : startDate!.floorToSeconds(in: rule.tz)
+        
+        // Initialize Context, Filters, Frequency, count, and any other necessary properties here
+        self.context = Context(options: rule.options, dtstart: rule.dtstart, tz: rule.tz)
+        let components = rule.calendar.dateComponents([.year, .month], from: currentDate)
+        context.rebuild(year: components.year!, month: components.month!)
+        
+        self.timeset = rule.options["timeset"] as? [[String: [Int]]]
         self.count = rule.options["count"] as? Int
-        // Assuming Frequency's initializer can handle the setup based on rule options
-//        self.frequency = Frequency.forOptions(rule.options, context: rule.context, start: rule.dtstart)
+        
+        if let byMonth = rule.options["bymonth"] as? [Int] {
+            self.filters.append(ByMonth(byMonths: byMonth, context: context))
+        }
+        
+        // TODO: Implement after ByWeekNumber is fixed
+//        if let byWeekNo = rule.options["byweekno"] as? [Int] {
+//            self.filters.append(ByWeekNumber(byWeekNumbers: byWeekNo, context: context))
+//        }
+
+        if let byWeekDay = rule.options["byweekday"] as? [Weekday] {
+            self.filters.append(ByWeekDay(weekdays: byWeekDay, context: context))
+        }
+
+        if let byYearDay = rule.options["byyearday"] as? [Int] {
+            self.filters.append(ByYearDay(byYearDays: byYearDay, context: context))
+        }
+
+        if let byMonthDay = rule.options["bymonthday"] as? [Int] {
+            self.filters.append(ByMonthDay(byMonthDays: byMonthDay, context: context))
+        }
+        
+        self.generator = rule.options["bysetpos"] != nil ? BySetPosition(bySetPositions: rule.options["bysetpos"] as! [Int], context: context) : AllOccurrences(context: context)
+        
+        let frequencyType = (try? Frequency.forOptions(rule.options)) ?? Monthly.self
+        self.frequency = frequencyType.init(context: context, filters: filters, generator: generator, timeset: timeset ?? [], startDate: currentDate)
     }
     
     func next() -> Date? {
+        guard !finished, let frequency = frequency else { return nil }
+        
+        
         // Ensure that the logic handles returning nil if there are no more dates to generate
-        while let nextDate = frequency?.nextOccurrence(after: current) {
+        while let nextDate = frequency.nextOccurrences() {
             // Check if nextDate is before the start date
             if nextDate < rule.dtstart {
                 continue
@@ -162,7 +205,7 @@ class RuleIterator: IteratorProtocol {
                 continue
             }
             // Successfully found the next valid date
-            self.current = nextDate
+            self.currentDate = nextDate
             return nextDate
         }
         return nil
@@ -192,81 +235,81 @@ class RuleIterator: IteratorProtocol {
     }
     
     
-    
-    func each(floorDate: Date? = nil, _ block: ((Date) -> Void)? = nil) -> AnyIterator<Date?> {
-        var currentDate = floorDate
-        
-        // If we have a COUNT or INTERVAL option, or floorDate is nil, or dtstart is after floorDate, we start from dtstart
-        if countOrIntervalPresent() || currentDate == nil || dtstart > currentDate! {
-            currentDate = dtstart
-        }
-        
-//        guard let block = block else {
-//            // If no block is provided, we might want to return an enumerator or handle differently
-//            return
+//    
+//    func each(floorDate: Date? = nil, _ block: ((Date) -> Void)? = nil) -> AnyIterator<Date?> {
+//        var currentDate = floorDate
+//        
+//        // If we have a COUNT or INTERVAL option, or floorDate is nil, or dtstart is after floorDate, we start from dtstart
+//        if countOrIntervalPresent() || currentDate == nil || dtstart > currentDate! {
+//            currentDate = dtstart
 //        }
-        
-        let context = Context(options: options, dtstart: dtstart, tz: tz)
-        let components = calendar.dateComponents([.year, .month], from: currentDate!)
-        context.rebuild(year: components.year!, month: components.month!)
-        
-        let timeset = options["timeset"] as? [[String: [Int]]]
-        var count = options["count"] as? Int
-        
-        var filters: [Filter] = []
-        
-        if let byMonth = options["bymonth"] as? [Int] {
-            filters.append(ByMonth(byMonths: byMonth, context: context))
-        }
-        
-        // TODO: Implement after ByWeekNumber is fixed
-//        if let byWeekNo = options["byweekno"] as? [Int] {
-//            filters.append(ByWeekNumber(byWeekNumbers: byWeekNo, context: context))
+//        
+////        guard let block = block else {
+////            // If no block is provided, we might want to return an enumerator or handle differently
+////            return
+////        }
+//        
+//        let context = Context(options: options, dtstart: dtstart, tz: tz)
+//        let components = calendar.dateComponents([.year, .month], from: currentDate!)
+//        context.rebuild(year: components.year!, month: components.month!)
+//        
+//        let timeset = options["timeset"] as? [[String: [Int]]]
+//        var count = options["count"] as? Int
+//        
+//        var filters: [Filter] = []
+//        
+//        if let byMonth = options["bymonth"] as? [Int] {
+//            filters.append(ByMonth(byMonths: byMonth, context: context))
 //        }
-
-        if let byWeekDay = options["byweekday"] as? [Weekday] {
-            filters.append(ByWeekDay(weekdays: byWeekDay, context: context))
-        }
-
-//        if let byYearDay = options["byyearday"] as? [Int] {
-//            filters.append(ByYearDay(byYearDays: byYearDay, context: context))
+//        
+//        // TODO: Implement after ByWeekNumber is fixed
+////        if let byWeekNo = options["byweekno"] as? [Int] {
+////            filters.append(ByWeekNumber(byWeekNumbers: byWeekNo, context: context))
+////        }
+//
+//        if let byWeekDay = options["byweekday"] as? [Weekday] {
+//            filters.append(ByWeekDay(weekdays: byWeekDay, context: context))
 //        }
-
-        if let byMonthDay = options["bymonthday"] as? [Int] {
-            filters.append(ByMonthDay(byMonthDays: byMonthDay, context: context))
-        }
-        
-        let generator: Generator = options["bysetpos"] != nil ? BySetPosition(bySetPositions: options["bysetpos"] as! [Int], context: context) : AllOccurrences(context: context)
-        
-        let frequencyType = (try? Frequency.forOptions(options)) ?? Monthly.self
-        let frequency = frequencyType.init(context: context, filters: filters, generator: generator, timeset: timeset ?? [], startDate: currentDate)
-        
-        return AnyIterator<Date?> {
-            while true {
-                guard let year = calendar.dateComponents([.year], from: currentDate!).year, year <= self.maxYear else {
-                     return
-                }
-                
-                let nextOccurrences = frequency.nextOccurrences()
-                for occurrence in nextOccurrences {
-                    if occurrence >= self.dtstart,
-                       currentDate == nil || occurrence >= currentDate!,
-                       let until = self.options["until"] as? Date, occurrence <= until,
-                       !self.exdate.contains(occurrence) {
-                        
-                        currentDate = occurrence
-                        return occurrence
-                    }
-                }
-                // Update `currentDate` to the next date according to frequency, not to get stuck in an infinite loop
-                // This requires adjusting your `Frequency` class to support advancing to the next date without generating occurrences
-                guard let nextDate = frequency.advance(currentDate) else {
-                    return nil
-                }
-                currentDate = nextDate
-            }
-        }
-    }
+//
+////        if let byYearDay = options["byyearday"] as? [Int] {
+////            filters.append(ByYearDay(byYearDays: byYearDay, context: context))
+////        }
+//
+//        if let byMonthDay = options["bymonthday"] as? [Int] {
+//            filters.append(ByMonthDay(byMonthDays: byMonthDay, context: context))
+//        }
+//        
+//        let generator: Generator = options["bysetpos"] != nil ? BySetPosition(bySetPositions: options["bysetpos"] as! [Int], context: context) : AllOccurrences(context: context)
+//        
+//        let frequencyType = (try? Frequency.forOptions(options)) ?? Monthly.self
+//        let frequency = frequencyType.init(context: context, filters: filters, generator: generator, timeset: timeset ?? [], startDate: currentDate)
+//        
+//        return AnyIterator<Date?> {
+//            while true {
+//                guard let year = calendar.dateComponents([.year], from: currentDate!).year, year <= self.maxYear else {
+//                     return
+//                }
+//                
+//                let nextOccurrences = frequency.nextOccurrences()
+//                for occurrence in nextOccurrences {
+//                    if occurrence >= self.dtstart,
+//                       currentDate == nil || occurrence >= currentDate!,
+//                       let until = self.options["until"] as? Date, occurrence <= until,
+//                       !self.exdate.contains(occurrence) {
+//                        
+//                        currentDate = occurrence
+//                        return occurrence
+//                    }
+//                }
+//                // Update `currentDate` to the next date according to frequency, not to get stuck in an infinite loop
+//                // This requires adjusting your `Frequency` class to support advancing to the next date without generating occurrences
+//                guard let nextDate = frequency.advance(currentDate) else {
+//                    return nil
+//                }
+//                currentDate = nextDate
+//            }
+//        }
+//    }
     
     func countOrIntervalPresent() -> Bool {
         if let count = options["count"] as? Int, count > 0 {

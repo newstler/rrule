@@ -13,10 +13,6 @@ class Frequency {
     let generator: Generator
     let timeset: [[String: [Int]]]
     unowned let context: Context
-    
-    lazy var calendar: Calendar = {
-        return context.calendar
-    }()
 
     required init(context: Context, filters: [Filter], generator: Generator, timeset: [[String: [Int]]], startDate: Date? = nil) {
         self.context = context
@@ -28,9 +24,9 @@ class Frequency {
 
     func advance() {
         let interval = advanceBy()
-        guard let newDate = calendar.date(byAdding: interval.component, value: interval.value, to: currentDate) else { return }
+        guard let newDate = context.calendar.date(byAdding: interval.component, value: interval.value, to: currentDate) else { return }
         if !sameMonth(currentDate, newDate) {
-            context.rebuild(year: calendar.component(.year, from: newDate), month: calendar.component(.month, from: newDate))
+            context.rebuild(year: context.calendar.component(.year, from: newDate), month: context.calendar.component(.month, from: newDate))
         }
         currentDate = newDate
     }
@@ -91,8 +87,8 @@ class Frequency {
     }
 
     private func sameMonth(_ firstDate: Date, _ secondDate: Date) -> Bool {
-        return calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .month) &&
-               calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .year)
+        return context.calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .month) &&
+               context.calendar.isDate(firstDate, equalTo: secondDate, toGranularity: .year)
     }
 }
 

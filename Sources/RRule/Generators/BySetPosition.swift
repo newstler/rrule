@@ -24,7 +24,6 @@ class BySetPosition: Generator {
 
     func validDates(dayset: [Int?]) -> [Date] {
         guard let firstDayOfYear = context.firstDayOfYear else { return [] }
-        let calendar = Calendar.current
 
         // Compact the dayset to remove nil values and ensure it's mutable for manipulation
         let compactedDayset = dayset.compactMap { $0 }
@@ -36,7 +35,7 @@ class BySetPosition: Generator {
         }.compactMap { $0 }
 
         return validPositions.map { dayOffset in
-            calendar.date(byAdding: .day, value: dayOffset, to: firstDayOfYear)!
+            context.calendar.date(byAdding: .day, value: dayOffset, to: firstDayOfYear)!
         }
     }
 }

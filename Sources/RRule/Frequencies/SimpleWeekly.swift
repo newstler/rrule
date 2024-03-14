@@ -12,16 +12,16 @@ class SimpleWeekly: Frequency {
         correctCurrentDateIfNeeded()
         let thisOccurrence = currentDate
         if let interval = context.options["interval"] as? Int {
-            currentDate = calendar.date(byAdding: .day, value: interval * 7, to: currentDate)!
+            currentDate = context.calendar.date(byAdding: .day, value: interval * 7, to: currentDate)!
         }
         return generator.processTimeset(date: thisOccurrence, timeset: timeset)
     }
 
     func correctCurrentDateIfNeeded() {
-        let targetWday = (context.options["byweekday"] as? [Weekday])?.first?.index ?? calendar.component(.weekday, from: context.dtstart) - 1
+        let targetWday = (context.options["byweekday"] as? [Weekday])?.first?.index ?? context.calendar.component(.weekday, from: context.dtstart) - 1
 
-        while calendar.component(.weekday, from: currentDate) - 1 != targetWday {
-            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+        while context.calendar.component(.weekday, from: currentDate) - 1 != targetWday {
+            currentDate = context.calendar.date(byAdding: .day, value: 1, to: currentDate)!
         }
     }
 }

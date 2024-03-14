@@ -9,7 +9,7 @@ import Foundation
 
 class Weekly: Frequency {
     override func possibleDays() -> [Int?] {
-        guard let dayOfYear = calendar.ordinality(of: .day, in: .year, for: currentDate) else { return [] }
+        guard let dayOfYear = context.calendar.ordinality(of: .day, in: .year, for: currentDate) else { return [] }
         var i = dayOfYear - 1 // Convert to 0-indexed
         var possibleDays: [Int] = []
         for _ in 0..<7 {
@@ -32,7 +32,7 @@ class Weekly: Frequency {
             return 7 // Assuming a default interval of 1 week if not specified.
         }
 
-        let weekday = calendar.component(.weekday, from: date) - 1 // Adjust for zero-based indexing, assuming the calendar starts at 0.
+        let weekday = context.calendar.component(.weekday, from: date) - 1 // Adjust for zero-based indexing, assuming the context.calendar starts at 0.
         
         if wkst > weekday {
             return -(weekday + 1 + (6 - wkst)) + interval * 7
