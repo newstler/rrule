@@ -28,7 +28,11 @@ class Rule: Sequence {
     }
     
     func makeIterator() -> RuleIterator {
-        RuleIterator(rule: self, startDate: dtstart)
+        RuleIterator(rule: self)
+    }
+    
+    func makeIterator(startDate: Date) -> RuleIterator {
+        RuleIterator(rule: self, startDate: startDate)
     }
 
     init(rrule: String, dtstart: Date = Date(), tzid: String = "UTC", exdate: [Date] = [], maxYear: Int? = nil) {
@@ -56,13 +60,14 @@ class Rule: Sequence {
         return allUntil(startDate: startDate.floorToSeconds(in: tz), endDate: maxDate, limit: limit).filter { $0 >= startDate.floorToSeconds(in: tz) }
     }
     
-    func allUntil(startDate: Date? = nil, endDate: Date? = nil, limit: Int? = nil) -> [Date] {
+    func allUntil(startDate: Date? = nil, endDate: Date? = nil, limit: Int? = 31) -> [Date] {
         var results: [Date] = []
-        var iterator = makeIterator()
+        let maxResults = limit ?? Int.max
+        var iterator = startDate != nil ? makeIterator(startDate: startDate!) : makeIterator()
         
-        while let nextDate = iterator.next(), nextDate <= endDate ?? maxDate {
+        while let nextDate = iterator.next(), nextDate <= (endDate ?? maxDate) {
             results.append(nextDate)
-            if let limit = limit, results.count >= limit {
+            if results.count >= maxResults {
                 break
             }
         }
@@ -120,10 +125,11 @@ class RuleIterator: IteratorProtocol {
     private var current: Date?
     private var frequency: Frequency? // Assuming Frequency is a class you have that can generate dates
     private var count: Int?
+    private var options: [String: Any] = [:]
     
-    init(rule: Rule, startDate: Date?) {
+    init(rule: Rule, startDate: Date? = nil) {
         self.rule = rule
-        self.current = rule.dtstart
+        self.current = startDate ?? rule.dtstart
         // Initialize frequency, count, and any other necessary properties here
         self.count = rule.options["count"] as? Int
         // Assuming Frequency's initializer can handle the setup based on rule options
@@ -133,40 +139,52 @@ class RuleIterator: IteratorProtocol {
     func next() -> Date? {
         // Ensure that the logic handles returning nil if there are no more dates to generate
         while let nextDate = frequency?.nextOccurrence(after: current) {
-            // Check if the next date meets the criteria
-            if rule.isValid(date: nextDate) {
-                self.current = nextDate
-                if let count = count {
-                    self.count = count - 1
-                    if self.count! < 0 {
-                        return nil
-                    }
-                }
-                return nextDate
+            // Check if nextDate is before the start date
+            if nextDate < rule.dtstart {
+                continue
             }
-            // Update current date to the next date for the next iteration
+            // Check if floorDate is set and nextDate is before floorDate
+            if let floorDate = rule.floorDate, nextDate < floorDate {
+                continue
+            }
+            // Check if nextDate is after the until option
+            if nextDate > rule.maxDate {
+                return nil
+            }
+            // Decrement count and check if we've reached the limit
+            if let count = self.count, count <= 0 {
+                return nil
+            } else {
+                self.count? -= 1
+            }
+            // Check if nextDate is in the exclusion list
+            if rule.exdate.contains(nextDate) {
+                continue
+            }
+            // Successfully found the next valid date
             self.current = nextDate
+            return nextDate
         }
         return nil
     }
     
-    func next() -> Date? {
-        guard !finished, let frequency = frequency else { return nil }
-
-        while let nextDate = frequency.nextOccurrence(after: current), nextDate <= rule.maxDate {
-            self.current = nextDate
-            if rule.isValid(date: nextDate) {
-                decrementCountIfNeeded()
-                if self.count <= 0 {
-                    finished = true
-                }
-                return nextDate
-            }
-        }
-        finished = true
-        return nil
-    }
-    
+//    func next() -> Date? {
+//        guard !finished, let frequency = frequency else { return nil }
+//
+//        while let nextDate = frequency.nextOccurrence(after: current), nextDate <= rule.maxDate {
+//            self.current = nextDate
+//            if rule.isValid(date: nextDate) {
+//                decrementCountIfNeeded()
+//                if self.count <= 0 {
+//                    finished = true
+//                }
+//                return nextDate
+//            }
+//        }
+//        finished = true
+//        return nil
+//    }
+//    
     private func decrementCountIfNeeded() {
         if rule.options["count"] != nil {
             count -= 1
