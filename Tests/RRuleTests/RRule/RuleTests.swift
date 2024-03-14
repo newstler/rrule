@@ -29,13 +29,8 @@ final class RuleTests: XCTestCase {
         
         let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
         
-        // Adjust these expected dates to the correct values and time zone adjustments
-        let expectedFirstDate = dtstart // You may need to adjust this based on your actual implementation
-        let expectedSecondDate = calendar.date(byAdding: .day, value: 1, to: dtstart)!
-        let expectedThirdDate = calendar.date(byAdding: .day, value: 2, to: dtstart)!
-        
-        XCTAssertEqual(rule.next(), expectedFirstDate, "The first date should match the initial dtstart value.")
-        XCTAssertEqual(rule.next(), expectedSecondDate, "The second date should be one day after dtstart.")
-        XCTAssertEqual(rule.next(), expectedThirdDate, "The third date should be two days after dtstart.")
+        XCTAssertEqual(rule.next(), dateFormatter.date(from: "Tue Sep  2 06:00:00 PDT 1997"), "The first date should match the initial dtstart value.")
+        XCTAssertEqual(rule.next(), dateFormatter.date(from: "Tue Sep  3 06:00:00 PDT 1997"), "The second date should be one day after dtstart.")
+        XCTAssertEqual(rule.next(), dateFormatter.date(from: "Tue Sep  4 06:00:00 PDT 1997"), "The third date should be two days after dtstart.")
     }
 }

@@ -64,7 +64,7 @@ class Frequency {
     }
     
     static func forOptions(_ options: [String: Any]) throws -> Frequency.Type {
-        guard let freq = options["FREQ"] as? String else {
+        guard let freq = options["freq"] as? String else {
             throw InvalidRRule(reason: "Valid FREQ value is required")
         }
         

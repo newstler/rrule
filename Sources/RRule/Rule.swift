@@ -13,7 +13,6 @@ class Rule: Sequence {
     let rrule: String
     let exdate: [Date]
     var options: [String: Any] = [:] // Assuming options is a dictionary of parsed RRULE components
-    var frequencyType: Frequency.Type? // Using a static type reference to the Frequency class or its subclasses
     let maxYear: Int
     let maxDate: Date
     var calendar: Calendar = .current
@@ -44,7 +43,6 @@ class Rule: Sequence {
         self.maxYear = maxYear ?? 9999
         self.maxDate = DateComponents(calendar: calendar, year: self.maxYear).date!
         self.options = try! parseOptions(rrule)
-        self.frequencyType = try? Frequency.forOptions(options)
     }
     
     
@@ -188,7 +186,7 @@ class RuleIterator: IteratorProtocol {
         // Determine whether to use the provided startDate or fall back to rule.dtstart,
         // and apply flooring to seconds as necessary.
         let useRuleStart = startDate == nil || rule.dtstart > startDate! || (count != nil && count! > 1) || (interval != nil && interval! > 1)
-
+        
         // If any condition is met, use rule.dtstart, floored to seconds in the rule's timezone;
         // otherwise, use the provided startDate, also considering flooring to seconds.
         self.currentDate = useRuleStart ? rule.dtstart.floorToSeconds(in: rule.tz) : startDate!.floorToSeconds(in: rule.tz)
@@ -203,18 +201,18 @@ class RuleIterator: IteratorProtocol {
         }
         
         // TODO: Implement after ByWeekNumber is fixed
-//        if let byWeekNo = rule.options["byweekno"] as? [Int] {
-//            self.filters.append(ByWeekNumber(byWeekNumbers: byWeekNo, context: context))
-//        }
-
+        //        if let byWeekNo = rule.options["byweekno"] as? [Int] {
+        //            self.filters.append(ByWeekNumber(byWeekNumbers: byWeekNo, context: context))
+        //        }
+        
         if let byWeekDay = rule.options["byweekday"] as? [Weekday] {
             self.filters.append(ByWeekDay(weekdays: byWeekDay, context: context))
         }
-
+        
         if let byYearDay = rule.options["byyearday"] as? [Int] {
             self.filters.append(ByYearDay(byYearDays: byYearDay, context: context))
         }
-
+        
         if let byMonthDay = rule.options["bymonthday"] as? [Int] {
             self.filters.append(ByMonthDay(byMonthDays: byMonthDay, context: context))
         }
@@ -223,19 +221,11 @@ class RuleIterator: IteratorProtocol {
         
         let frequencyType = (try? Frequency.forOptions(rule.options)) ?? Monthly.self
         self.frequency = frequencyType.init(context: context, filters: filters, generator: generator, timeset: timeset ?? [], startDate: currentDate)
-        
-        self.occurrences = frequency.nextOccurrences()
     }
     
     func next() -> Date? {
-        // Ensure there's a next date to return
-        if currentIndex >= occurrences.count {
-            return nil // or load more dates if your logic is to fetch dates in batches
-        }
+        guard let nextDate = frequency.nextOccurrences().first else { return nil }
         
-        let nextDate = occurrences[currentIndex]
-        currentIndex += 1
-
         // Apply the checks as per Ruby logic
         guard nextDate >= rule.dtstart,
               !(rule.exdate.contains { $0 == nextDate }),
@@ -248,7 +238,7 @@ class RuleIterator: IteratorProtocol {
             rule.options["count"] = count - 1
             if count - 1 == 0 { return nil } // Stop iteration if count reaches zero
         }
-
+        
         return nextDate
     }
 }
