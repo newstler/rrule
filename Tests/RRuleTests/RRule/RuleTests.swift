@@ -310,4 +310,285 @@ final class RuleTests: XCTestCase {
             XCTAssertEqual(result, expected, "The result should match the expected date.")
         }
     }
+    
+    func testYearlyRuleWithByDayConstraint() {
+        let rrule = "FREQ=YEARLY;BYDAY=20MO"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Mon May 19 06:00:00 PDT 1997") else {
+            XCTFail("Failed to parse dtstart")
+            return
+        }
+
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
+        guard let startDate = dateFormatter.date(from: "Mon May 19 06:00:00 PDT 1997"),
+              let endDate = dateFormatter.date(from: "Mon May 17 06:00:00 PDT 1999") else {
+            XCTFail("Failed to parse start or end date")
+            return
+        }
+
+        let results = rule.between(startDate: startDate, endDate: endDate)
+        let expectedDates = [
+            "Mon May 19 06:00:00 PDT 1997",
+            "Mon May 18 06:00:00 PDT 1998",
+            "Mon May 17 06:00:00 PDT 1999"
+        ].compactMap { dateFormatter.date(from: $0) }
+
+        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+        for (result, expected) in zip(results, expectedDates) {
+            XCTAssertEqual(result, expected, "The result should match the expected date.")
+        }
+    }
+
+    // TODO: Switch on when BYWEEKNO is fixed
+//    func testYearlyRuleWithByWeekNoAndByDay() {
+//        let rrule = "FREQ=YEARLY;BYWEEKNO=20;BYDAY=MO"
+//        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+//        let timezone = TimeZone(identifier: "America/New_York")!
+//        dateFormatter.timeZone = timezone
+//
+//        guard let dtstart = dateFormatter.date(from: "Mon May 12 06:00:00 EDT 1997") else {
+//            XCTFail("Failed to parse dtstart")
+//            return
+//        }
+//
+//        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
+//        guard let startDate = dateFormatter.date(from: "Mon May 12 06:00:00 EDT 1997"),
+//              let endDate = dateFormatter.date(from: "Mon May 17 06:00:00 EDT 1999") else {
+//            XCTFail("Failed to parse start or end date")
+//            return
+//        }
+//
+//        let results = rule.between(startDate: startDate, endDate: endDate)
+//        let expectedDatesStrings = [
+//            "Mon May 12 06:00:00 EDT 1997",
+//            "Mon May 11 06:00:00 EDT 1998",
+//            "Mon May 17 06:00:00 EDT 1999"
+//        ]
+//        let expectedDates = expectedDatesStrings.compactMap { dateFormatter.date(from: $0) }
+//
+//        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+//        for (result, expected) in zip(results, expectedDates) {
+//            XCTAssertEqual(result, expected, "The result should match the expected date.")
+//        }
+//    }
+
+    
+    func testYearlyRuleWithByMonthAndByDay() {
+        let rrule = "FREQ=YEARLY;BYMONTH=3;BYDAY=TH"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Thu Mar 13 06:00:00 EST 1997") else {
+            XCTFail("Failed to parse dtstart")
+            return
+        }
+
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
+        guard let startDate = dateFormatter.date(from: "Thu Mar 13 06:00:00 EST 1997"),
+              let endDate = dateFormatter.date(from: "Thu Mar 25 06:00:00 EST 1999") else {
+            XCTFail("Failed to parse start or end date")
+            return
+        }
+
+        let results = rule.between(startDate: startDate, endDate: endDate)
+        let expectedDatesStrings = [
+            "Thu Mar 13 06:00:00 EST 1997",
+            "Thu Mar 20 06:00:00 EST 1997",
+            "Thu Mar 27 06:00:00 EST 1997",
+            "Thu Mar  5 06:00:00 EST 1998",
+            "Thu Mar 12 06:00:00 EST 1998",
+            "Thu Mar 19 06:00:00 EST 1998",
+            "Thu Mar 26 06:00:00 EST 1998",
+            "Thu Mar  4 06:00:00 EST 1999",
+            "Thu Mar 11 06:00:00 EST 1999",
+            "Thu Mar 18 06:00:00 EST 1999",
+            "Thu Mar 25 06:00:00 EST 1999"
+        ]
+        let expectedDates = expectedDatesStrings.compactMap(dateFormatter.date(from:))
+
+        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+        for (result, expected) in zip(results, expectedDates) {
+            XCTAssertEqual(result, expected, "The result should match the expected date.")
+        }
+    }
+    
+    func testYearlyRuleWithMultipleMonthsAndDay() {
+        let rrule = "FREQ=YEARLY;BYDAY=TH;BYMONTH=6,7,8"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Thu Jun 5 06:00:00 EDT 1997") else {
+            XCTFail("Failed to parse dtstart")
+            return
+        }
+
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
+        guard let startDate = dateFormatter.date(from: "Thu Jun 5 06:00:00 EDT 1997"),
+              let endDate = dateFormatter.date(from: "Thu Aug 26 06:00:00 EDT 1999") else {
+            XCTFail("Failed to parse start or end date")
+            return
+        }
+
+        let results = rule.between(startDate: startDate, endDate: endDate)
+        let expectedDates = [
+            "Thu Jun 5 06:00:00 EDT 1997",
+            "Thu Jun 12 06:00:00 EDT 1997",
+            "Thu Jun 19 06:00:00 EDT 1997",
+            "Thu Jun 26 06:00:00 EDT 1997",
+            "Thu Jul 3 06:00:00 EDT 1997",
+            "Thu Jul 10 06:00:00 EDT 1997",
+            "Thu Jul 17 06:00:00 EDT 1997",
+            "Thu Jul 24 06:00:00 EDT 1997",
+            "Thu Jul 31 06:00:00 EDT 1997",
+            "Thu Aug 7 06:00:00 EDT 1997",
+            "Thu Aug 14 06:00:00 EDT 1997",
+            "Thu Aug 21 06:00:00 EDT 1997",
+            "Thu Aug 28 06:00:00 EDT 1997",
+            "Thu Jun 4 06:00:00 EDT 1998",
+            "Thu Jun 11 06:00:00 EDT 1998",
+            "Thu Jun 18 06:00:00 EDT 1998",
+            "Thu Jun 25 06:00:00 EDT 1998",
+            "Thu Jul 2 06:00:00 EDT 1998",
+            "Thu Jul 9 06:00:00 EDT 1998",
+            "Thu Jul 16 06:00:00 EDT 1998",
+            "Thu Jul 23 06:00:00 EDT 1998",
+            "Thu Jul 30 06:00:00 EDT 1998",
+            "Thu Aug 6 06:00:00 EDT 1998",
+            "Thu Aug 13 06:00:00 EDT 1998",
+            "Thu Aug 20 06:00:00 EDT 1998",
+            "Thu Aug 27 06:00:00 EDT 1998",
+            "Thu Jun 3 06:00:00 EDT 1999",
+            "Thu Jun 10 06:00:00 EDT 1999",
+            "Thu Jun 17 06:00:00 EDT 1999",
+            "Thu Jun 24 06:00:00 EDT 1999",
+            "Thu Jul 1 06:00:00 EDT 1999",
+            "Thu Jul 8 06:00:00 EDT 1999",
+            "Thu Jul 15 06:00:00 EDT 1999",
+            "Thu Jul 22 06:00:00 EDT 1999",
+            "Thu Jul 29 06:00:00 EDT 1999",
+            "Thu Aug 5 06:00:00 EDT 1999",
+            "Thu Aug 12 06:00:00 EDT 1999",
+            "Thu Aug 19 06:00:00 EDT 1999",
+            "Thu Aug 26 06:00:00 EDT 1999"
+        ].compactMap { dateFormatter.date(from: $0) }
+
+        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+        for (result, expected) in zip(results, expectedDates) {
+            XCTAssertEqual(result, expected, "The result should match the expected date.")
+        }
+    }
+
+    
+    func testMonthlyRuleByDayAndByMonthDay() {
+        let rrule = "FREQ=MONTHLY;BYDAY=SA;BYMONTHDAY=7,8,9,10,11,12,13"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Sat Sep 13 06:00:00 EDT 1997") else {
+            XCTFail("Failed to parse dtstart")
+            return
+        }
+
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
+        guard let startDate = dateFormatter.date(from: "Sat Sep 13 06:00:00 EDT 1997"),
+              let endDate = dateFormatter.date(from: "Sat Jun 13 06:00:00 EDT 1998") else {
+            XCTFail("Failed to parse start or end date")
+            return
+        }
+
+        let results = rule.between(startDate: startDate, endDate: endDate)
+
+        let expectedDates = [
+            "Sat Sep 13 06:00:00 EDT 1997",
+            "Sat Oct 11 06:00:00 EDT 1997",
+            "Sat Nov 8 06:00:00 EST 1997",
+            "Sat Dec 13 06:00:00 EST 1997",
+            "Sat Jan 10 06:00:00 EST 1998",
+            "Sat Feb 7 06:00:00 EST 1998",
+            "Sat Mar 7 06:00:00 EST 1998",
+            "Sat Apr 11 06:00:00 EDT 1998",
+            "Sat May 9 06:00:00 EDT 1998",
+            "Sat Jun 13 06:00:00 EDT 1998"
+        ].compactMap { dateFormatter.date(from: $0) }
+
+        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+        for (result, expected) in zip(results, expectedDates) {
+            XCTAssertEqual(result, expected, "The result should match the expected date.")
+        }
+    }
+
+    func testYearlyRuleWithIntervalAndComplexConstraints() {
+        let rrule = "FREQ=YEARLY;INTERVAL=4;BYMONTH=11;BYDAY=TU;BYMONTHDAY=2,3,4,5,6,7,8"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Tue Nov 5 06:00:00 EST 1996") else {
+            XCTFail("Failed to parse dtstart")
+            return
+        }
+
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
+        guard let startDate = dateFormatter.date(from: "Tue Nov 5 06:00:00 EST 1996"),
+              let endDate = dateFormatter.date(from: "Tue Nov 2 06:00:00 EST 2004") else {
+            XCTFail("Failed to parse start or end date")
+            return
+        }
+
+        let results = rule.between(startDate: startDate, endDate: endDate)
+
+        let expectedDates = [
+            "Tue Nov 5 06:00:00 EST 1996",
+            "Tue Nov 7 06:00:00 EST 2000",
+            "Tue Nov 2 06:00:00 EST 2004"
+        ].compactMap { dateFormatter.date(from: $0) }
+
+        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+        for (result, expected) in zip(results, expectedDates) {
+            XCTAssertEqual(result, expected, "The result should match the expected date.")
+        }
+    }
+    
+    func testMonthlyRuleByDayWithBySetPos() {
+        let rrule = "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-2"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+        
+        guard let dtstart = dateFormatter.date(from: "Mon Sep 29 06:00:00 EDT 1997") else {
+            XCTFail("Failed to parse dtstart")
+            return
+        }
+        
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
+        guard let startDate = dateFormatter.date(from: "Mon Sep 29 06:00:00 EDT 1997"),
+              let endDate = dateFormatter.date(from: "Mon Mar 30 06:00:00 EST 1998") else {
+            XCTFail("Failed to parse start or end date")
+            return
+        }
+        
+        let results = rule.between(startDate: startDate, endDate: endDate)
+        
+        let expectedDates = [
+            "Mon Sep 29 06:00:00 EDT 1997",
+            "Thu Oct 30 06:00:00 EST 1997",
+            "Thu Nov 27 06:00:00 EST 1997",
+            "Tue Dec 30 06:00:00 EST 1997",
+            "Thu Jan 29 06:00:00 EST 1998",
+            "Thu Feb 26 06:00:00 EST 1998",
+            "Mon Mar 30 06:00:00 EST 1998"
+        ].compactMap { dateFormatter.date(from: $0) }
+        
+        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+        for (result, expected) in zip(results, expectedDates) {
+            XCTAssertEqual(result, expected, "The result should match the expected date.")
+        }
+    }
+
 }

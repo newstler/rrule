@@ -225,26 +225,6 @@ class RuleIterator: IteratorProtocol {
         self.occurrencesIterator = self.frequency.nextOccurrences().makeIterator()
     }
     
-//    func next() -> Date? {
-//        let occurrences = frequency.nextOccurrences() // can be more than 1
-//        guard let nextDate = occurrences.first else { return nil }
-//        
-//        // Apply the checks as per Ruby logic
-//        guard nextDate >= rule.dtstart,
-//              !(rule.exdate.contains { $0 == nextDate }),
-//              nextDate <= (rule.options["until"] as? Date ?? rule.maxDate) else {
-//            return self.next() // Recursively call next() to skip this date and find the next valid one
-//        }
-//        
-//        // Decrement count if applicable
-//        if let count = rule.options["count"] as? Int, count > 0 {
-//            rule.options["count"] = count - 1
-//            if count - 1 == 0 { return nil } // Stop iteration if count reaches zero
-//        }
-//        
-//        return nextDate
-//    }
-    
     func next() -> Date? {
         // Attempt to get the next date from the current iterator
         while let nextDate = occurrencesIterator?.next() {
