@@ -172,6 +172,7 @@ class RuleIterator: IteratorProtocol {
     private var filters: [Filter] = []
     private let generator: Generator
     private let frequency: Frequency // Assuming Frequency is a class you have that can generate dates
+    private var occurrencesIterator: IndexingIterator<[Date]>?
     
     init(rule: Rule, startDate: Date? = nil) {
         self.rule = rule
@@ -219,25 +220,47 @@ class RuleIterator: IteratorProtocol {
         
         let frequencyType = (try? Frequency.forOptions(rule.options)) ?? Monthly.self
         self.frequency = frequencyType.init(context: context, filters: filters, generator: generator, timeset: timeset ?? [], startDate: currentDate)
+        
+        // Pre-load the first batch of occurrences
+        self.occurrencesIterator = self.frequency.nextOccurrences().makeIterator()
     }
     
+//    func next() -> Date? {
+//        let occurrences = frequency.nextOccurrences() // can be more than 1
+//        guard let nextDate = occurrences.first else { return nil }
+//        
+//        // Apply the checks as per Ruby logic
+//        guard nextDate >= rule.dtstart,
+//              !(rule.exdate.contains { $0 == nextDate }),
+//              nextDate <= (rule.options["until"] as? Date ?? rule.maxDate) else {
+//            return self.next() // Recursively call next() to skip this date and find the next valid one
+//        }
+//        
+//        // Decrement count if applicable
+//        if let count = rule.options["count"] as? Int, count > 0 {
+//            rule.options["count"] = count - 1
+//            if count - 1 == 0 { return nil } // Stop iteration if count reaches zero
+//        }
+//        
+//        return nextDate
+//    }
+    
     func next() -> Date? {
-        let occurrences = frequency.nextOccurrences()
-        guard let nextDate = occurrences.first else { return nil }
-        
-        // Apply the checks as per Ruby logic
-        guard nextDate >= rule.dtstart,
-              !(rule.exdate.contains { $0 == nextDate }),
-              nextDate <= (rule.options["until"] as? Date ?? rule.maxDate) else {
-            return self.next() // Recursively call next() to skip this date and find the next valid one
+        // Attempt to get the next date from the current iterator
+        while let nextDate = occurrencesIterator?.next() {
+            // Apply checks and filters (similar to your existing logic in Rule's next())
+            if nextDate >= rule.dtstart && !rule.exdate.contains(nextDate) && nextDate <= (rule.options["until"] as? Date ?? rule.maxDate) {
+                // Check additional conditions like count decrement
+                return nextDate
+            }
+            
+            if let count = rule.options["count"] as? Int, count > 0 {
+                rule.options["count"] = count - 1
+                if count - 1 == 0 { return nil } // Stop iteration if count reaches zero
+            }
         }
-        
-        // Decrement count if applicable
-        if let count = rule.options["count"] as? Int, count > 0 {
-            rule.options["count"] = count - 1
-            if count - 1 == 0 { return nil } // Stop iteration if count reaches zero
-        }
-        
-        return nextDate
+        // If no more dates are available in the current iterator, attempt to load the next batch
+        occurrencesIterator = frequency.nextOccurrences().makeIterator()
+        return next()
     }
 }
