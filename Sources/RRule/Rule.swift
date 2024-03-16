@@ -232,7 +232,7 @@ class RuleIterator: IteratorProtocol {
         }
 
         while let nextDate = occurrencesIterator?.next() {
-            if nextDate >= rule.dtstart && !rule.exdate.contains(nextDate) && nextDate <= (rule.options["until"] as? Date ?? rule.maxDate) {
+            if nextDate >= rule.dtstart && nextDate <= (rule.options["until"] as? Date ?? rule.maxDate) {
                 // Decrement the count because a valid date has been found.
                 if var countValue = count {
                     // Ensure we have occurrences left to generate.
@@ -240,11 +240,21 @@ class RuleIterator: IteratorProtocol {
                         countValue -= 1 // Decrement count after confirming the date is valid.
                         count = countValue // Update the main count.
                     }
+                    
+                    // FIXME: Duplicating code
+                    if rule.exdate.contains(nextDate) {
+                        continue
+                    }
 
                     if countValue == 0 {
                         // If count has reached zero after decrementing, return the current date and stop.
                         return nextDate
                     }
+                }
+                
+                // FIXME: Duplicating code
+                if rule.exdate.contains(nextDate) {
+                    continue
                 }
                 return nextDate // Return the current date as it's valid and within bounds.
             }
@@ -254,10 +264,10 @@ class RuleIterator: IteratorProtocol {
         let newOccurrences = frequency.nextOccurrences()
         if !newOccurrences.isEmpty {
             occurrencesIterator = newOccurrences.makeIterator()
-            return self.next() // Attempt to get the next date from the new batch.
+            return next() // Attempt to get the next date from the new batch.
         }
         
-        // If no more dates can be generated or the count limit is reached, return nil.
+        // If no more dates can be generated, return nil.
         return nil
     }
 

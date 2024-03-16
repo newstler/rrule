@@ -625,4 +625,37 @@ final class RuleTests: XCTestCase {
         }
     }
 
+    func testDailyRuleWithExdate() {
+        let rrule = "FREQ=DAILY;COUNT=10"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        
+        let timezone = TimeZone(identifier: "America/Los_Angeles")!
+        dateFormatter.timeZone = timezone
+        
+        guard let dtstart = dateFormatter.date(from: "Tue Sep  2 06:00:00 PST 1997"),
+              let exdate1 = dateFormatter.date(from: "Fri Sep  5 06:00:00 PST 1997"),
+              let exdate2 = dateFormatter.date(from: "Mon Sep  8 06:00:00 PST 1997") else {
+            XCTFail("Failed to parse dates")
+            return
+        }
+        
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier, exdate: [exdate1, exdate2])
+        
+        let results = rule.all()
+        let expectedDates = [
+            "Tue Sep  2 06:00:00 PST 1997",
+            "Wed Sep  3 06:00:00 PST 1997",
+            "Thu Sep  4 06:00:00 PST 1997",
+            "Sat Sep  6 06:00:00 PST 1997",
+            "Sun Sep  7 06:00:00 PST 1997",
+            "Tue Sep  9 06:00:00 PST 1997",
+            "Wed Sep 10 06:00:00 PST 1997",
+            "Thu Sep 11 06:00:00 PST 1997",
+        ].compactMap(dateFormatter.date(from:))
+        
+        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+        for (result, expected) in zip(results, expectedDates) {
+            XCTAssertEqual(result, expected, "The result should match the expected date.")
+        }
+    }
 }
