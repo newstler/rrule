@@ -310,7 +310,7 @@ final class RuleTests: XCTestCase {
             XCTAssertEqual(result, expected, "The result should match the expected date.")
         }
     }
-    
+  
     func testYearlyRuleWithByDayConstraint() {
         let rrule = "FREQ=YEARLY;BYDAY=20MO"
         dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"

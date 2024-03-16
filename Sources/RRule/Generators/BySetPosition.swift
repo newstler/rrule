@@ -29,8 +29,8 @@ class BySetPosition: Generator {
         let compactedDayset = dayset.compactMap { $0 }
 
         let validPositions = bySetPositions.map { position -> Int? in
-            let adjustedPosition = position > 0 ? position - 1 : position
-            guard adjustedPosition < compactedDayset.count, adjustedPosition >= 0 else { return nil }
+            let adjustedPosition = position > 0 ? position - 1 : position < 0 ? compactedDayset.count + position : position
+            guard adjustedPosition >= 0, adjustedPosition < compactedDayset.count else { return nil }
             return compactedDayset[adjustedPosition]
         }.compactMap { $0 }
 

@@ -15,7 +15,7 @@ class Generator {
     }
     
     func combineDatesAndTimes(dayset: [Int?], timeset: [[String: [Int]]]) -> [Date] {
-        fatalError("Subclasses must implement `possibleDays`.")
+        fatalError("Subclasses must implement `combineDatesAndTimes`.")
     }
     
     func processTimeset(date: Date, timeset: [[String: [Int]]]) -> [Date] {
