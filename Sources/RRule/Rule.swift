@@ -226,21 +226,41 @@ class RuleIterator: IteratorProtocol {
     }
     
     func next() -> Date? {
-        // Attempt to get the next date from the current iterator
+        // Check if the count limit has been reached before attempting to fetch new dates.
+        if let countValue = count, countValue <= 0 {
+            return nil // Stop if the limit of occurrences has been reached.
+        }
+
         while let nextDate = occurrencesIterator?.next() {
-            // Apply checks and filters (similar to your existing logic in Rule's next())
             if nextDate >= rule.dtstart && !rule.exdate.contains(nextDate) && nextDate <= (rule.options["until"] as? Date ?? rule.maxDate) {
-                // Check additional conditions like count decrement
-                return nextDate
-            }
-            
-            if let count = rule.options["count"] as? Int, count > 0 {
-                rule.options["count"] = count - 1
-                if count - 1 == 0 { return nil } // Stop iteration if count reaches zero
+                // Decrement the count because a valid date has been found.
+                if var countValue = count {
+                    // Ensure we have occurrences left to generate.
+                    if countValue > 0 {
+                        countValue -= 1 // Decrement count after confirming the date is valid.
+                        count = countValue // Update the main count.
+                    }
+
+                    if countValue == 0 {
+                        // If count has reached zero after decrementing, return the current date and stop.
+                        return nextDate
+                    }
+                }
+                return nextDate // Return the current date as it's valid and within bounds.
             }
         }
-        // If no more dates are available in the current iterator, attempt to load the next batch
-        occurrencesIterator = frequency.nextOccurrences().makeIterator()
-        return next()
+        
+        // Attempt to load the next batch of occurrences.
+        let newOccurrences = frequency.nextOccurrences()
+        if !newOccurrences.isEmpty {
+            occurrencesIterator = newOccurrences.makeIterator()
+            return self.next() // Attempt to get the next date from the new batch.
+        }
+        
+        // If no more dates can be generated or the count limit is reached, return nil.
+        return nil
     }
+
+
+
 }
