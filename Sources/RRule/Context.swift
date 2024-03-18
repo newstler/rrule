@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class Context {
+class Context {
     var options: [String: Any]
     var dtstart: Date
     var tz: TimeZone
