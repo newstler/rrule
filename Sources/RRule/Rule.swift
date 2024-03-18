@@ -188,7 +188,7 @@ class RuleIterator: IteratorProtocol {
         
         // If any condition is met, use rule.dtstart, floored to seconds in the rule's timezone;
         // otherwise, use the provided startDate, also considering flooring to seconds.
-        self.currentDate = useRuleStart ? rule.dtstart.floorToSeconds(in: rule.tz) : startDate!.floorToSeconds(in: rule.tz)
+        self.currentDate = useRuleStart ? rule.dtstart : startDate!.floorToSeconds(in: rule.tz)
         
         // Initialize Context, Filters, Frequency, count, and any other necessary properties here
         self.context = Context(options: rule.options, dtstart: rule.dtstart, tz: rule.tz)

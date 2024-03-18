@@ -18,6 +18,8 @@ final class RuleTests: XCTestCase {
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
     }
     
+    // MARK: Next
+    
     func testSequentialReturnValues() {
         let rrule = "FREQ=DAILY;COUNT=10"
         
@@ -657,5 +659,268 @@ final class RuleTests: XCTestCase {
         for (result, expected) in zip(results, expectedDates) {
             XCTAssertEqual(result, expected, "The result should match the expected date.")
         }
+    }
+    
+    func testWeeklyRuleWithIntervalAndByDay() {
+        let rrule = "FREQ=WEEKLY;INTERVAL=4;BYDAY=TH"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        
+        let timezone = TimeZone(identifier: "America/Los_Angeles")!
+        dateFormatter.timeZone = timezone
+        
+        guard let dtstart = dateFormatter.date(from: "Thu Jan 28 17:00:00 PST 2016") else {
+            XCTFail("Failed to parse dtstart")
+            return
+        }
+        
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
+        
+        guard let startDate = dateFormatter.date(from: "Tue May 24 14:34:59 PDT 2016"),
+              let endDate = dateFormatter.date(from: "Sun Jul 24 14:35:09 PDT 2016") else {
+            XCTFail("Failed to parse start or end date")
+            return
+        }
+        
+        let results = rule.between(startDate: startDate, endDate: endDate)
+        
+        let expectedDates = [
+            "Thu Jun 16 17:00:00 PDT 2016",
+            "Thu Jul 14 17:00:00 PDT 2016"
+        ].compactMap(dateFormatter.date(from:))
+        
+        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+        for (result, expected) in zip(results, expectedDates) {
+            XCTAssertEqual(result, expected, "The result should match the expected date.")
+        }
+    }
+
+    func testWeeklyRuleWithIntervalAndByDayParseFunction() {
+        let rrule = "FREQ=WEEKLY;INTERVAL=4;BYDAY=TH"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        
+        let timezone = TimeZone(identifier: "America/Los_Angeles")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Thu Jan 28 17:00:00 PST 2016") else {
+            XCTFail("Failed to parse dtstart")
+            return
+        }
+
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+
+        guard let startDate = dateFormatter.date(from: "Tue May 24 14:34:59 PDT 2016"),
+              let endDate = dateFormatter.date(from: "Sun Jul 24 14:35:09 PDT 2016") else {
+            XCTFail("Failed to parse start or end date")
+            return
+        }
+
+        let results = rule.between(startDate: startDate, endDate: endDate)
+        let expectedDates = [
+            "Thu Jun 16 17:00:00 PDT 2016",
+            "Thu Jul 14 17:00:00 PDT 2016"
+        ].compactMap(dateFormatter.date(from:))
+
+        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
+        for (result, expected) in zip(results, expectedDates) {
+            XCTAssertEqual(result, expected, "The result should match the expected date.")
+        }
+    }
+    
+    func testDailyRuleWithYearBorderStart() {
+        let rrule = "FREQ=DAILY"
+        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
+        let timezone = TimeZone(identifier: "America/Los_Angeles")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Thu Dec 31 16:00:00 PST 2015") else {
+            XCTFail("Failed to parse dtstart")
+            return
+        }
+
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+
+        guard let oneMonthBefore = calendar.date(byAdding: .month, value: -1, to: dtstart),
+              let oneMonthAfter = calendar.date(byAdding: .month, value: 1, to: dtstart) else {
+            XCTFail("Failed to calculate dates one month before and after dtstart")
+            return
+        }
+
+        let results = rule.between(startDate: oneMonthBefore, endDate: oneMonthAfter)
+        guard let firstResult = results.first else {
+            XCTFail("No results returned by the rule")
+            return
+        }
+
+        XCTAssertEqual(firstResult, dtstart, "The first result should match the dtstart date right on the year border.")
+    }
+
+    func testMonthlyRuleByDayBySetPosNotExist() {
+        let rrule = "FREQ=MONTHLY;BYDAY=WE;BYSETPOS=5"
+        let timezone = TimeZone(identifier: "America/Chicago")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Wed Jan 30 09:00:00 PST 2013"),
+              let startTime = dateFormatter.date(from: "Sun Jul 31 22:00:00 PDT 2016"),
+              let expectedInstance = dateFormatter.date(from: "Wed Aug 31 09:00:00 PDT 2016"),
+              let endTime = dateFormatter.date(from: "Wed Aug 31 21:59:59 PDT 2016") else {
+            XCTFail("Failed to parse dates")
+            return
+        }
+
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        let results = rule.between(startDate: startTime, endDate: endTime)
+
+        XCTAssertEqual(results, [expectedInstance], "The results should match the expected instance when BYSETPOS specifies a non-existing position.")
+    }
+    
+    func testIteratingWithFloorDateLimitsRange() {
+        let rrule = "FREQ=DAILY"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Tue Sep 2 06:00:00 PDT 1997"),
+              let startTime = dateFormatter.date(from: "Mon Sep 3 06:00:00 PDT 2018"),
+              let endTime = dateFormatter.date(from: "Thu Sep 10 06:00:00 PDT 2018") else {
+            XCTFail("Failed to parse dates")
+            return
+        }
+
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        let results = rule.between(startDate: startTime, endDate: endTime)
+
+        let expectedDates = [
+            "Tue Sep 3 06:00:00 PDT 2018",
+            "Wed Sep 4 06:00:00 PDT 2018",
+            "Thu Sep 5 06:00:00 PDT 2018"
+        ].compactMap(dateFormatter.date(from:))
+
+        XCTAssertEqual(Array(results.prefix(3)), expectedDates, "The results within the given range should match the expected dates.")
+    }
+
+    func testIteratingWithCountLimitsRange() {
+        let rrule = "FREQ=DAILY;COUNT=10"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Tue Sep 2 06:00:00 PDT 1997"),
+              let startTime = dateFormatter.date(from: "Wed Sep 3 06:00:00 PDT 1997"),
+              let endTime = dateFormatter.date(from: "Thu Sep 10 06:00:00 PDT 2018") else {
+            XCTFail("Failed to parse dates")
+            return
+        }
+
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        let results = rule.between(startDate: startTime, endDate: endTime)
+
+        let expectedDates = [
+            "Wed Sep 3 06:00:00 PDT 1997",
+            "Thu Sep 4 06:00:00 PDT 1997",
+            "Fri Sep 5 06:00:00 PDT 1997"
+        ].compactMap(dateFormatter.date(from:))
+
+        XCTAssertEqual(Array(results.prefix(3)), expectedDates, "The results within the given range should match the expected dates.")
+    }
+
+    func testIteratingWithIntervalLimitsRange() {
+        let rrule = "FREQ=DAILY;INTERVAL=10"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Tue Sep 2 06:00:00 PDT 1997"),
+              let startTime = dateFormatter.date(from: "Wed Sep 3 06:00:00 PDT 1997"),
+              let endTime = dateFormatter.date(from: "Thu Sep 30 06:00:00 PDT 2018") else {
+            XCTFail("Failed to parse dates")
+            return
+        }
+
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        let results = rule.between(startDate: startTime, endDate: endTime)
+
+        let expectedDates = [
+            "Fri Sep 12 06:00:00 PDT 1997",
+            "Mon Sep 22 06:00:00 PDT 1997",
+            "Thu Oct 2 06:00:00 PDT 1997"
+        ].compactMap(dateFormatter.date(from:))
+
+        XCTAssertEqual(Array(results.prefix(3)), expectedDates, "The results within the given range should match the expected dates.")
+    }
+
+    func testIteratingWithIntervalAndCountLimitsRange() {
+        let rrule = "FREQ=DAILY;INTERVAL=10;COUNT=5"
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Tue Sep 2 06:00:00 PDT 1997"),
+              let startTime = dateFormatter.date(from: "Wed Sep 3 06:00:00 PDT 1997"),
+              let endTime = dateFormatter.date(from: "Thu Sep 30 06:00:00 PDT 2018") else {
+            XCTFail("Failed to parse dates")
+            return
+        }
+
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        let results = rule.between(startDate: startTime, endDate: endTime)
+
+        let expectedDates = [
+            "Fri Sep 12 06:00:00 PDT 1997",
+            "Mon Sep 22 06:00:00 PDT 1997",
+            "Thu Oct 2 06:00:00 PDT 1997"
+        ].compactMap(dateFormatter.date(from:))
+
+        XCTAssertEqual(Array(results.prefix(3)), expectedDates, "The results within the given range should match the expected dates.")
+    }
+
+    // MARK: From
+    
+    func testFromWithWeeklyRuleAndTimeCriteria() {
+        let rrule = "FREQ=WEEKLY;BYSECOND=59;BYMINUTE=59;BYHOUR=23;WKST=SU"
+        let timezone = TimeZone(identifier: "Australia/Brisbane")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Sun Feb 4 04:00:00 +1000 2018"),
+              let fromDate = dateFormatter.date(from: "Sun Apr 8 00:00:00 +0000 2018") else {
+            XCTFail("Failed to parse dates")
+            return
+        }
+
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        let results = rule.from(startDate: fromDate, limit: 9)
+
+        let expectedDates = [
+            "Sun Apr 8 23:59:59 +1000 2018",
+            "Sun Apr 15 23:59:59 +1000 2018",
+            "Sun Apr 22 23:59:59 +1000 2018",
+            "Sun Apr 29 23:59:59 +1000 2018",
+            "Sun May 6 23:59:59 +1000 2018",
+            "Sun May 13 23:59:59 +1000 2018",
+            "Sun May 20 23:59:59 +1000 2018",
+            "Sun May 27 23:59:59 +1000 2018",
+            "Sun Jun 3 23:59:59 +1000 2018"
+        ].compactMap(dateFormatter.date(from:))
+
+        XCTAssertEqual(results, expectedDates, "The results from the start date with a limit should match the expected dates.")
+    }
+
+    func testFromWithWeeklyRuleStartingBeyondBeginning() {
+        let rrule = "FREQ=WEEKLY;BYSECOND=59;BYMINUTE=59;BYHOUR=23;WKST=SU"
+        let timezone = TimeZone(identifier: "Australia/Brisbane")!
+        dateFormatter.timeZone = timezone
+
+        guard let dtstart = dateFormatter.date(from: "Sun Feb 4 04:00:00 +1000 2018"),
+              let fromStartDate = dateFormatter.date(from: "Sun May 13 23:59:59 +1000 2018") else {
+            XCTFail("Failed to parse dates")
+            return
+        }
+
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        let results = rule.from(startDate: fromStartDate, limit: 4)
+
+        let expectedDates = [
+            "Sun May 13 23:59:59 +1000 2018",
+            "Sun May 20 23:59:59 +1000 2018",
+            "Sun May 27 23:59:59 +1000 2018",
+            "Sun Jun 3 23:59:59 +1000 2018"
+        ].compactMap(dateFormatter.date(from:))
+
+        XCTAssertEqual(results, expectedDates, "The results from the specified start date with a limit should match the expected dates.")
     }
 }
