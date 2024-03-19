@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum RRule {
+public enum RRule {
     static let weekdays = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"]
     
     public static func parse(_ rrule: String, dtstart: Date = Date(), tzid: String = "UTC", exdate: [Date] = [], maxYear: Int? = nil) -> Rule {

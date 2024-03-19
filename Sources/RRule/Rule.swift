@@ -7,7 +7,7 @@
 
 import Foundation
 
-class Rule: Sequence {
+public class Rule: Sequence {
     let dtstart: Date
     let tz: TimeZone
     let rrule: String
@@ -26,11 +26,11 @@ class Rule: Sequence {
         return _internalIterator?.next()
     }
     
-    func makeIterator() -> RuleIterator {
+    public func makeIterator() -> RuleIterator {
         RuleIterator(rule: self)
     }
     
-    func makeIterator(startDate: Date) -> RuleIterator {
+    public func makeIterator(startDate: Date) -> RuleIterator {
         RuleIterator(rule: self, startDate: startDate)
     }
 
@@ -46,15 +46,15 @@ class Rule: Sequence {
     }
     
     
-    func all(limit: Int? = nil) -> [Date] {
+    public func all(limit: Int? = nil) -> [Date] {
         return allUntil(limit: limit)
     }
     
-    func between(startDate: Date, endDate: Date, limit: Int? = nil) -> [Date] {
+    public func between(startDate: Date, endDate: Date, limit: Int? = nil) -> [Date] {
         return allUntil(startDate: startDate.floorToSeconds(in: tz), endDate: endDate.floorToSeconds(in: tz), limit: limit).filter { $0 >= startDate.floorToSeconds(in: tz) }
     }
 
-    func from(startDate: Date, limit: Int) -> [Date] {
+    public func from(startDate: Date, limit: Int) -> [Date] {
         return allUntil(startDate: startDate.floorToSeconds(in: tz), endDate: maxDate, limit: limit).filter { $0 >= startDate.floorToSeconds(in: tz) }
     }
     
@@ -163,7 +163,7 @@ class Rule: Sequence {
     }
 }
 
-class RuleIterator: IteratorProtocol {
+public class RuleIterator: IteratorProtocol {
     private let rule: Rule
     private var currentDate: Date
     private let context: Context
@@ -225,7 +225,7 @@ class RuleIterator: IteratorProtocol {
         self.occurrencesIterator = self.frequency.nextOccurrences().makeIterator()
     }
     
-    func next() -> Date? {
+    public func next() -> Date? {
         // Check if the count limit has been reached before attempting to fetch new dates.
         if let countValue = count, countValue <= 0 {
             return nil // Stop if the limit of occurrences has been reached.
