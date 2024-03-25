@@ -77,6 +77,10 @@ final class RuleTests: XCTestCase {
     func testWeeklyRuleStartingBeyondBeginning() {
         let rrule = "FREQ=WEEKLY;BYSECOND=59;BYMINUTE=59;BYHOUR=23;WKST=SU"
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
+        
+        let timezone = TimeZone(identifier: "Australia/Brisbane")!
+        dateFormatter.timeZone = timezone
+        
         guard let dtstart = dateFormatter.date(from: "2018-02-04 04:00:00 +1000"),
               let startDate = dateFormatter.date(from: "2018-05-13 23:59:59 +1000"),
               let endDate = dateFormatter.date(from: "2018-06-08 23:59:59 +0000") else {
@@ -84,7 +88,7 @@ final class RuleTests: XCTestCase {
             return
         }
         
-        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: "Australia/Brisbane")
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
         let results = rule.between(startDate: startDate, endDate: endDate)
         let expectedDates = [
             dateFormatter.date(from: "2018-05-13 23:59:59 +1000")!,
@@ -99,6 +103,10 @@ final class RuleTests: XCTestCase {
     func testWeeklyRuleWithLimit() {
         let rrule = "FREQ=WEEKLY;BYSECOND=59;BYMINUTE=59;BYHOUR=23;WKST=SU"
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
+        
+        let timezone = TimeZone(identifier: "Australia/Brisbane")!
+        dateFormatter.timeZone = timezone
+        
         guard let dtstart = dateFormatter.date(from: "2018-02-04 04:00:00 +1000"),
               let startDate = dateFormatter.date(from: "2018-04-08 00:00:00 +0000"),
               let endDate = dateFormatter.date(from: "2018-06-08 23:59:59 +0000") else {
@@ -106,7 +114,7 @@ final class RuleTests: XCTestCase {
             return
         }
         
-        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: "Australia/Brisbane")
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
         let results = rule.between(startDate: startDate, endDate: endDate, limit: 2)
         let expectedDates = [
             dateFormatter.date(from: "2018-04-08 23:59:59 +1000")!,
@@ -119,7 +127,9 @@ final class RuleTests: XCTestCase {
     func testWeeklyRuleStartingBeyondBeginningWithLimit() {
         let rrule = "FREQ=WEEKLY;BYSECOND=59;BYMINUTE=59;BYHOUR=23;WKST=SU"
         dateFormatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss Z"
-        dateFormatter.timeZone = TimeZone(identifier: "Australia/Brisbane")
+        
+        let timezone = TimeZone(identifier: "Australia/Brisbane")!
+        dateFormatter.timeZone = timezone
         
         guard let dtstart = dateFormatter.date(from: "Sun, 04 Feb 2018 04:00:00 +1000"),
               let startDate = dateFormatter.date(from: "Sun, 13 May 2018 23:59:59 +1000"),
@@ -128,7 +138,7 @@ final class RuleTests: XCTestCase {
             return
         }
         
-        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: "Australia/Brisbane")
+        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier)
         let results = rule.between(startDate: startDate, endDate: endDate, limit: 2)
         let expectedDates = [
             dateFormatter.date(from: "Sun, 13 May 2018 23:59:59 +1000")!,
@@ -141,6 +151,10 @@ final class RuleTests: XCTestCase {
     func testDailyRuleWithInterval() {
         let rrule = "FREQ=DAILY;INTERVAL=2"
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
+        
+        let timezone = TimeZone(identifier: "America/New_York")!
+        dateFormatter.timeZone = timezone
+        
         guard let dtstart = dateFormatter.date(from: "1997-09-02 06:00:00 -0400"),
               let startDate = dateFormatter.date(from: "1997-09-02 06:00:00 -0400"),
               let endDate = dateFormatter.date(from: "1997-10-22 06:00:00 -0400") else {
