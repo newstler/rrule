@@ -1044,7 +1044,50 @@ final class RuleTests: XCTestCase {
         XCTAssertEqual(rule.all(), expectedDates)
     }
 
+    func testReturnsCorrectResultWithUntil19970904T160000Z() {
+        let rrule = "FREQ=DAILY;UNTIL=19970904T160000Z"
+        let dtstart = dateFormatter.date(from: "Tue Sep 02 09:00:00 PDT 1997")!
+        let timezone = TimeZone(identifier: "America/Los_Angeles")!
+        
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        
+        let expectedDates = [
+            "Tue Sep 02 09:00:00 PDT 1997",
+            "Wed Sep 03 09:00:00 PDT 1997",
+            "Thu Sep 04 09:00:00 PDT 1997"
+        ].compactMap(dateFormatter.date(from:))
+        
+        XCTAssertEqual(rule.all(), expectedDates)
+    }
     
-    
+    func testReturnsCorrectResultWithUntil19970905T150000Z() {
+        let rrule = "FREQ=DAILY;UNTIL=19970905T150000Z"
+        let dtstart = dateFormatter.date(from: "Tue Sep 02 09:00:00 PDT 1997")!
+        let timezone = TimeZone(identifier: "America/Los_Angeles")!
+        
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        
+        let expectedDates = [
+            "Tue Sep 02 09:00:00 PDT 1997",
+            "Wed Sep 03 09:00:00 PDT 1997",
+            "Thu Sep 04 09:00:00 PDT 1997"
+        ].compactMap(dateFormatter.date(from:))
+        
+        XCTAssertEqual(rule.all(), expectedDates)
+    }
+
+    func testReturnsCorrectResultWithUntil19970902T160000Z() {
+        let rrule = "FREQ=DAILY;UNTIL=19970902T160000Z"
+        let dtstart = dateFormatter.date(from: "Tue Sep 02 09:00:00 PDT 1997")!
+        let timezone = TimeZone(identifier: "America/Los_Angeles")!
+        
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        
+        let expectedDates = [
+            "Tue Sep 02 09:00:00 PDT 1997"
+        ].compactMap(dateFormatter.date(from:))
+        
+        XCTAssertEqual(rule.all(), expectedDates)
+    }
 }
 

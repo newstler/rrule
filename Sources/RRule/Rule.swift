@@ -92,14 +92,7 @@ public class Rule: Sequence {
                     throw InvalidRRule(reason: "COUNT must be a non-negative integer")
                 }
             case "UNTIL":
-                // The value of the UNTIL rule part MUST have the same value type as the "DTSTART" property.
-                options["until"] = parseDateString(String(value)) //DateFormatter().date(from: String(value))
-                
-//                if let until = dict["UNTIL"] {
-//                    if let untilDate = parseDateString(until) {
-//                        text += "\n" + String(localized: "until \(formatDate(untilDate))")
-//                    }
-//                }
+                options["until"] = parseDateString(String(value))
             case "INTERVAL":
                 if let i = Int(value), i > 0 {
                     options["interval"] = i
