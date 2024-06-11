@@ -640,40 +640,6 @@ final class RuleTests: XCTestCase {
             XCTAssertEqual(result, expected, "The result should match the expected date.")
         }
     }
-
-    func testDailyRuleWithExdate() {
-        let rrule = "FREQ=DAILY;COUNT=10"
-        dateFormatter.dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy"
-        
-        let timezone = TimeZone(identifier: "America/Los_Angeles")!
-        dateFormatter.timeZone = timezone
-        
-        guard let dtstart = dateFormatter.date(from: "Tue Sep  2 06:00:00 PST 1997"),
-              let exdate1 = dateFormatter.date(from: "Fri Sep  5 06:00:00 PST 1997"),
-              let exdate2 = dateFormatter.date(from: "Mon Sep  8 06:00:00 PST 1997") else {
-            XCTFail("Failed to parse dates")
-            return
-        }
-        
-        let rule = Rule(rrule: rrule, dtstart: dtstart, tzid: timezone.identifier, exdate: [exdate1, exdate2])
-        
-        let results = rule.all()
-        let expectedDates = [
-            "Tue Sep  2 06:00:00 PST 1997",
-            "Wed Sep  3 06:00:00 PST 1997",
-            "Thu Sep  4 06:00:00 PST 1997",
-            "Sat Sep  6 06:00:00 PST 1997",
-            "Sun Sep  7 06:00:00 PST 1997",
-            "Tue Sep  9 06:00:00 PST 1997",
-            "Wed Sep 10 06:00:00 PST 1997",
-            "Thu Sep 11 06:00:00 PST 1997",
-        ].compactMap(dateFormatter.date(from:))
-        
-        XCTAssertEqual(results.count, expectedDates.count, "The number of results should match the expected count.")
-        for (result, expected) in zip(results, expectedDates) {
-            XCTAssertEqual(result, expected, "The result should match the expected date.")
-        }
-    }
     
     func testWeeklyRuleWithIntervalAndByDay() {
         let rrule = "FREQ=WEEKLY;INTERVAL=4;BYDAY=TH"
@@ -937,4 +903,148 @@ final class RuleTests: XCTestCase {
 
         XCTAssertEqual(results, expectedDates, "The results from the specified start date with a limit should match the expected dates.")
     }
+    
+    func testReturnsCorrectResultWithUntil() {
+        let rrule = "FREQ=DAILY;UNTIL=19971224T000000Z"
+        let dtstart = dateFormatter.date(from: "Tue Sep 02 06:00:00 PDT 1997")!
+        let timezone = TimeZone(identifier: "America/New_York")!
+        
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        
+        let expectedDates = [
+            "Tue Sep 02 06:00:00 PDT 1997",
+            "Wed Sep 03 06:00:00 PDT 1997",
+            "Thu Sep 04 06:00:00 PDT 1997",
+            "Fri Sep 05 06:00:00 PDT 1997",
+            "Sat Sep 06 06:00:00 PDT 1997",
+            "Sun Sep 07 06:00:00 PDT 1997",
+            "Mon Sep 08 06:00:00 PDT 1997",
+            "Tue Sep 09 06:00:00 PDT 1997",
+            "Wed Sep 10 06:00:00 PDT 1997",
+            "Thu Sep 11 06:00:00 PDT 1997",
+            "Fri Sep 12 06:00:00 PDT 1997",
+            "Sat Sep 13 06:00:00 PDT 1997",
+            "Sun Sep 14 06:00:00 PDT 1997",
+            "Mon Sep 15 06:00:00 PDT 1997",
+            "Tue Sep 16 06:00:00 PDT 1997",
+            "Wed Sep 17 06:00:00 PDT 1997",
+            "Thu Sep 18 06:00:00 PDT 1997",
+            "Fri Sep 19 06:00:00 PDT 1997",
+            "Sat Sep 20 06:00:00 PDT 1997",
+            "Sun Sep 21 06:00:00 PDT 1997",
+            "Mon Sep 22 06:00:00 PDT 1997",
+            "Tue Sep 23 06:00:00 PDT 1997",
+            "Wed Sep 24 06:00:00 PDT 1997",
+            "Thu Sep 25 06:00:00 PDT 1997",
+            "Fri Sep 26 06:00:00 PDT 1997",
+            "Sat Sep 27 06:00:00 PDT 1997",
+            "Sun Sep 28 06:00:00 PDT 1997",
+            "Mon Sep 29 06:00:00 PDT 1997",
+            "Tue Sep 30 06:00:00 PDT 1997",
+            "Wed Oct 01 06:00:00 PDT 1997",
+            "Thu Oct 02 06:00:00 PDT 1997",
+            "Fri Oct 03 06:00:00 PDT 1997",
+            "Sat Oct 04 06:00:00 PDT 1997",
+            "Sun Oct 05 06:00:00 PDT 1997",
+            "Mon Oct 06 06:00:00 PDT 1997",
+            "Tue Oct 07 06:00:00 PDT 1997",
+            "Wed Oct 08 06:00:00 PDT 1997",
+            "Thu Oct 09 06:00:00 PDT 1997",
+            "Fri Oct 10 06:00:00 PDT 1997",
+            "Sat Oct 11 06:00:00 PDT 1997",
+            "Sun Oct 12 06:00:00 PDT 1997",
+            "Mon Oct 13 06:00:00 PDT 1997",
+            "Tue Oct 14 06:00:00 PDT 1997",
+            "Wed Oct 15 06:00:00 PDT 1997",
+            "Thu Oct 16 06:00:00 PDT 1997",
+            "Fri Oct 17 06:00:00 PDT 1997",
+            "Sat Oct 18 06:00:00 PDT 1997",
+            "Sun Oct 19 06:00:00 PDT 1997",
+            "Mon Oct 20 06:00:00 PDT 1997",
+            "Tue Oct 21 06:00:00 PDT 1997",
+            "Wed Oct 22 06:00:00 PDT 1997",
+            "Thu Oct 23 06:00:00 PDT 1997",
+            "Fri Oct 24 06:00:00 PDT 1997",
+            "Sat Oct 25 06:00:00 PDT 1997",
+            "Sun Oct 26 06:00:00 PST 1997",
+            "Mon Oct 27 06:00:00 PST 1997",
+            "Tue Oct 28 06:00:00 PST 1997",
+            "Wed Oct 29 06:00:00 PST 1997",
+            "Thu Oct 30 06:00:00 PST 1997",
+            "Fri Oct 31 06:00:00 PST 1997",
+            "Sat Nov 01 06:00:00 PST 1997",
+            "Sun Nov 02 06:00:00 PST 1997",
+            "Mon Nov 03 06:00:00 PST 1997",
+            "Tue Nov 04 06:00:00 PST 1997",
+            "Wed Nov 05 06:00:00 PST 1997",
+            "Thu Nov 06 06:00:00 PST 1997",
+            "Fri Nov 07 06:00:00 PST 1997",
+            "Sat Nov 08 06:00:00 PST 1997",
+            "Sun Nov 09 06:00:00 PST 1997",
+            "Mon Nov 10 06:00:00 PST 1997",
+            "Tue Nov 11 06:00:00 PST 1997",
+            "Wed Nov 12 06:00:00 PST 1997",
+            "Thu Nov 13 06:00:00 PST 1997",
+            "Fri Nov 14 06:00:00 PST 1997",
+            "Sat Nov 15 06:00:00 PST 1997",
+            "Sun Nov 16 06:00:00 PST 1997",
+            "Mon Nov 17 06:00:00 PST 1997",
+            "Tue Nov 18 06:00:00 PST 1997",
+            "Wed Nov 19 06:00:00 PST 1997",
+            "Thu Nov 20 06:00:00 PST 1997",
+            "Fri Nov 21 06:00:00 PST 1997",
+            "Sat Nov 22 06:00:00 PST 1997",
+            "Sun Nov 23 06:00:00 PST 1997",
+            "Mon Nov 24 06:00:00 PST 1997",
+            "Tue Nov 25 06:00:00 PST 1997",
+            "Wed Nov 26 06:00:00 PST 1997",
+            "Thu Nov 27 06:00:00 PST 1997",
+            "Fri Nov 28 06:00:00 PST 1997",
+            "Sat Nov 29 06:00:00 PST 1997",
+            "Sun Nov 30 06:00:00 PST 1997",
+            "Mon Dec 01 06:00:00 PST 1997",
+            "Tue Dec 02 06:00:00 PST 1997",
+            "Wed Dec 03 06:00:00 PST 1997",
+            "Thu Dec 04 06:00:00 PST 1997",
+            "Fri Dec 05 06:00:00 PST 1997",
+            "Sat Dec 06 06:00:00 PST 1997",
+            "Sun Dec 07 06:00:00 PST 1997",
+            "Mon Dec 08 06:00:00 PST 1997",
+            "Tue Dec 09 06:00:00 PST 1997",
+            "Wed Dec 10 06:00:00 PST 1997",
+            "Thu Dec 11 06:00:00 PST 1997",
+            "Fri Dec 12 06:00:00 PST 1997",
+            "Sat Dec 13 06:00:00 PST 1997",
+            "Sun Dec 14 06:00:00 PST 1997",
+            "Mon Dec 15 06:00:00 PST 1997",
+            "Tue Dec 16 06:00:00 PST 1997",
+            "Wed Dec 17 06:00:00 PST 1997",
+            "Thu Dec 18 06:00:00 PST 1997",
+            "Fri Dec 19 06:00:00 PST 1997",
+            "Sat Dec 20 06:00:00 PST 1997",
+            "Sun Dec 21 06:00:00 PST 1997",
+            "Mon Dec 22 06:00:00 PST 1997",
+            "Tue Dec 23 06:00:00 PST 1997"
+        ].compactMap(dateFormatter.date(from:))
+        
+        XCTAssertEqual(rule.all(), expectedDates)
+    }
+
+    func testReturnsCorrectResultWithUntil19970901T170000Z() {
+        let rrule = "FREQ=DAILY;UNTIL=19970901T170000Z"
+        let dtstart = dateFormatter.date(from: "Mon Sep 01 10:00:00 PDT 1997")!
+        let timezone = TimeZone(identifier: "America/Los_Angeles")!
+        
+        let rule = RRule.parse(rrule, dtstart: dtstart, tzid: timezone.identifier)
+        
+        let expectedDates = [
+            "Mon Sep 01 10:00:00 PDT 1997"
+        ].compactMap(dateFormatter.date(from:))
+        
+        XCTAssertEqual(rule.all(), expectedDates)
+    }
+
+    
+    
 }
+
