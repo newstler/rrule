@@ -92,8 +92,7 @@ public class Rule: Sequence {
                     throw InvalidRRule(reason: "COUNT must be a non-negative integer")
                 }
             case "UNTIL":
-                // The value of the UNTIL rule part MUST have the same value type as the "DTSTART" property.
-                options["until"] = DateFormatter().date(from: String(value))
+                options["until"] = parseDateString(String(value))
             case "INTERVAL":
                 if let i = Int(value), i > 0 {
                     options["interval"] = i
@@ -160,6 +159,13 @@ public class Rule: Sequence {
         }
         
         return options
+    }
+    
+    private func parseDateString(_ dateString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.date(from: dateString)
     }
 }
 
@@ -230,9 +236,18 @@ public class RuleIterator: IteratorProtocol {
         if let countValue = count, countValue <= 0 {
             return nil // Stop if the limit of occurrences has been reached.
         }
+        
+        var lastValidDate: Date? = nil // To store the last valid date
 
         while let nextDate = occurrencesIterator?.next() {
+            // Break the loop if the date is beyond the "until" date
+            if let untilDate = rule.options["until"] as? Date, nextDate > untilDate {
+                return nil
+            }
+            
             if nextDate >= rule.dtstart && nextDate <= (rule.options["until"] as? Date ?? rule.maxDate) {
+                lastValidDate = nextDate // Update last valid date
+                
                 // Decrement the count because a valid date has been found.
                 if var countValue = count {
                     // Ensure we have occurrences left to generate.
@@ -260,11 +275,13 @@ public class RuleIterator: IteratorProtocol {
             }
         }
         
-        // Attempt to load the next batch of occurrences.
-        let newOccurrences = frequency.nextOccurrences()
-        if !newOccurrences.isEmpty {
-            occurrencesIterator = newOccurrences.makeIterator()
-            return next() // Attempt to get the next date from the new batch.
+        // Check if more dates need to be generated
+        if (lastValidDate == nil) || (lastValidDate != nil && (rule.options["until"] as? Date ?? rule.maxDate) > lastValidDate!) {
+            let newOccurrences = frequency.nextOccurrences()
+            if !newOccurrences.isEmpty {
+                occurrencesIterator = newOccurrences.makeIterator()
+                return next() // Recursive call to continue searching
+            }
         }
         
         // If no more dates can be generated, return nil.
